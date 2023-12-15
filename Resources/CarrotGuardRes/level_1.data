@@ -1,0 +1,15 @@
+{
+    "tileFile":"CarrotGuardRes/level_1.tmx",
+    "number":10,
+    "monsters":
+            [{"name":"Monster_1.png","lifeValue":10,"gold":15}],
+    "turrets":
+            [{"name":"TB_base.png","gold":100,"bulletName":"TB_bullet.png"}],
+    "path":[
+        {"x":0,"y":6},
+        {"x":0,"y":7},
+        {"x":0,"y":8}
+
+        
+    ]
+}

@@ -5,8 +5,9 @@
 #include"TurretData.h"
 #include"MonsterData.h"
 #include"json/document.h"
-#include"LevelManager.h"
-#include"GameMenuScene.h"
+#include"Monster.h"
+#include"Turret.h"
+#include"Bullet.h"
 
 
 USING_NS_CC;
@@ -35,12 +36,18 @@ protected:
 	Label* _curNumberLabel;               // 显示当前怪物波数
 	Label* _goldLabel;                    // 显示当前玩家金币
 
+	Vector<Monster*>_monsterVector;       // 存储出现怪物集合
+	bool _isFinish = false;               // 所有怪物是否全部出现
+
 public:
 
 	// 选择当前关卡，并创建，通过关卡数
 	static Scene* createSceneWithLevel(int selectLevel);
 
 	virtual bool init();
+
+	void onMouseDown(EventMouse* event);
+
 
 	// TMP ->OPEN GL
 	Vec2 locationForTilePos(Vec2 pos);

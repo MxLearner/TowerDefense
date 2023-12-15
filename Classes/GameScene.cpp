@@ -1,17 +1,19 @@
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
+#include"cocos2d.h"
 
 using namespace ui;
+USING_NS_CC;
 
 static int monsterCount = 5;   // 每一波出现多少怪物
-static int _currentLevel = 1;  // 当前关卡
+static int currentLevel = 1;  // 当前关卡
 
 
 #define DEBUG
 
 Scene* GameScene::createSceneWithLevel(int selectLevel)
 {   // 获得关卡编号
-	_currentLevel = selectLevel;
+	currentLevel = selectLevel;
 
 	auto scene = Scene::create();
 	
@@ -26,24 +28,33 @@ bool GameScene::init()
 	if (!Layer::init()) {
 		return false;
 	}
+	// 获取屏幕宽高
 	Size size = Director::getInstance()->getVisibleSize();
 	_screenWidth = size.width;
 	_screenHeight = size.height;
+#ifdef DEBUG
+	CCLOG("screenWidth:  %lf, screenHeight:  %lf", _screenWidth, _screenHeight);
+#endif // DEBUG
 
 	//****************** 读取关卡数据 ***************
 	
+	// 加载精灵帧，塔与子弹，怪物，萝卜  ======后续改成读完关卡数据后在加载
+	auto spriteFrameCache = SpriteFrameCache::getInstance();
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TBList.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Monsters.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Carrots.plist");
 	// rapidjson 对象
 	rapidjson::Document document;
 
 	// 根据传递的关卡值解析对应的关卡数据
 	std::string filePath = FileUtils::getInstance()->
-		fullPathForFilename(StringUtils::format("%d.data", _currentLevel));
+		fullPathForFilename(StringUtils::format("CarrotGuardRes/level_%d.data", currentLevel));
 
 #ifdef DEBUG
 	CCLOG("File Path: %s", filePath.c_str());
 #endif // DEBUG
 
-
+	// 读取文件内容
 	std::string contentStr = FileUtils::getInstance()->getStringFromFile(filePath);
 
 #ifdef DEBUG
@@ -52,16 +63,10 @@ bool GameScene::init()
 	}
 #endif // DEBUG
 
-	
+	// 解析contentStr中json数据，并存到document中
 	document.Parse<0>(contentStr.c_str());
 
 #ifdef DEBUG
-	if (document.Parse<0>(contentStr.c_str()).HasParseError()) {
-		CCLOG("Error: JSON parse error.");
-	}
-	else {
-		CCLOG("okkkkkkkkkk.");
-	}
 	if (document.Parse<0>(contentStr.c_str()).HasParseError()) {
 		CCLOG("Error: JSON parse error. Code: %u",
 			   document.GetParseError());
@@ -69,7 +74,7 @@ bool GameScene::init()
 #endif // DEBUG
 
 
-
+	// 检查是否读到 tilefile数据
 #ifdef DEBUG
 	if (document.HasMember("tileFile") && document["tileFile"].IsString()) {
 		const char* tileFileValue = document["tileFile"].GetString();
@@ -107,6 +112,9 @@ bool GameScene::init()
 
 	 // 获取窗口大小
     Size winSize = Director::getInstance()->getWinSize();
+#ifdef DEBUG
+	CCLOG("winWidth:  %lf, winHeight:  %lf", winSize.width, winSize.height);
+#endif // DEBUG
 
     // 设置场景容器的大小为窗口大小
     //this->setContentSize(winSize);
@@ -115,7 +123,7 @@ bool GameScene::init()
     _tileMap->setScaleY(winSize.height / _tileMap->getContentSize().height);
 	// 把地图锚点和位置都设置为原点，使地图左下角与屏幕左下角对齐
 	_tileMap->setAnchorPoint(Vec2::ZERO);
-	_tileMap->setPosition(Vec2(-1.0f*0,0.0f));
+	_tileMap->setPosition(Vec2::ZERO);
 
 	this->addChild(_tileMap, 1);
 
@@ -203,33 +211,37 @@ bool GameScene::init()
 
 
 	// 创建萝卜
-	//_carrot = Sprite::createWithSpriteFrameName("carrot.png"); // ================
-	_carrot = Sprite::create("carrot.png");
-	_carrot ->setScale(0.2);
+	_carrot = Sprite::createWithSpriteFrameName("Carrot_2.png");
+	//_carrot = Sprite::create("carrot.png");
+	_carrot ->setScale(0.4);
 	_carrot->setPosition(carrotX, carrotY);
 	_tileMap->addChild(_carrot, 2);
 
 
 	// =========设置屏幕数据
+	// 注意屏幕数据的父节点应该是scece ，而不是瓦片地图，因为瓦片地图进行了缩放，
+	// 如果是瓦片地图的子节点基于屏幕的setposition 会进行缩放，被挤出屏幕！！！！
 	// 1. 显示出现了多少波怪物
-	_curNumberLabel = Label::createWithSystemFont("0", "Arial", 32);
+	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("% d", _currNum), "Arial", 32);
 	_curNumberLabel->setColor(Color3B::RED);
-	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.7);
-	_tileMap->addChild(_curNumberLabel);
+	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.95);
+	//_tileMap->addChild(_curNumberLabel);
+	this->addChild(_curNumberLabel,2);
 	// 2. 一共有多少波怪物
 	_numberLabel = Label::createWithSystemFont(StringUtils::format("/%dtimes", _number), "Arial", 32);
 	_numberLabel->setColor(Color3B::BLUE);
-	_numberLabel->setPosition(_screenWidth * 0.55, _screenHeight * 0.7);
-	_tileMap->addChild(_numberLabel);
+	_numberLabel->setPosition(_screenWidth * 0.55, _screenHeight * 0.95);
+	this->addChild(_numberLabel,2);
 	// 3. 右上角金币数量
 	//auto gold = Sprite::create("");// ===============
 	//gold->setPosition(50, _screenHeight * 0.96);
 	//_tileMap->addChild(gold, 2);
 
-	_goldLabel = Label::createWithSystemFont("200", "Arial-BoldMT", 32);
-	_goldLabel->setColor(Color3B::RED);
-	_goldLabel->setPosition(100, _screenHeight * 0.7);
-	_tileMap->addChild(_goldLabel);
+	_goldLabel = Label::createWithSystemFont(StringUtils::format("gold: %d", _goldValue), "Arial-BoldMT", 32);
+	_goldLabel->setColor(Color3B::BLUE);
+	_goldLabel->setPosition(100, _screenHeight * 0.95);
+	_goldLabel->enableOutline(Color4B::WHITE, 2);
+	this->addChild(_goldLabel,2);
 
 
 	// 开始游戏时，倒计时
@@ -248,23 +260,23 @@ bool GameScene::init()
 	label2->setVisible(false);
 	label3->setVisible(false);
 	
-	_tileMap->addChild(label1,2);
-	_tileMap->addChild(label2,2);
-	_tileMap->addChild(label3,2);
+	this->addChild(label1,2);
+	this->addChild(label2,2);
+	this->addChild(label3,2);
 
 	// 设置倒数sequence动作
 	auto countdown = Sequence::create(CallFunc::create([=] {
 		label3->setVisible(true);
 		}), DelayTime::create(1), CallFunc::create([=] {
-			_tileMap->removeChild(label3);
+			this->removeChild(label3);
 			}), CallFunc::create([=] {
 				label2->setVisible(true);
 				}), DelayTime::create(1), CallFunc::create([=] {
-					_tileMap->removeChild(label2);
+					this->removeChild(label2);
 					}), CallFunc::create([=] {
 						label1->setVisible(true);
 						}), DelayTime::create(1), CallFunc::create([=] {
-							_tileMap->removeChild(label1);
+							this->removeChild(label1);
 							// 游戏主循环
 							scheduleUpdate();
 							}) ,NULL);
@@ -272,20 +284,51 @@ bool GameScene::init()
 
 	this->runAction(countdown);
 
-	// 播放音乐  =================
 
-	
+#ifdef DEBUG
+	auto listener = EventListenerMouse::create();
+	listener->onMouseDown = CC_CALLBACK_1(GameScene::onMouseDown, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+#endif // DEBUG
+
+
+
+
+
 	return true;
 }
 
-// TMP ->OPEN GL
-Vec2 GameScene::locationForTilePos(Vec2 pos)
+void GameScene::onMouseDown(EventMouse* event)
 {
-	int x = (int)(pos.x * (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR()));
-	float pointHeight = _tileMap->getTileSize().height / CC_CONTENT_SCALE_FACTOR();
+#ifdef DEBUG
+    // 获取鼠标点击的坐标
+    Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+    // 注意两个坐标位置
+	// OpenGL坐标系，左上角0，0
+	// 输出鼠标点击的坐标
+    CCLOG(" clickPos.x = %f, clickPos.y = %f", clickPos.x, clickPos.y);
+	// 输出鼠标点击的屏幕坐标
+	//屏幕坐标系 ，左下角 0，0
+    CCLOG("screenPos.x = %f, screenPos.y = %f", screenPos.x, screenPos.y);
+#endif // DEBUG
+
+
+}
+
+
+
+// TMP ->Screen
+// 地图格子坐标转化成屏幕坐标
+Vec2 GameScene::locationForTilePos(Vec2 pos)
+{   // 注意 * _tileMap->getScale() ！！！
+	int x = (int)(pos.x * (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR())*_tileMap->getScale());
+	float pointHeight = _tileMap->getTileSize().height / CC_CONTENT_SCALE_FACTOR()*_tileMap->getScale();
 	int y = (int)((_tileMap->getMapSize().height * pointHeight) - (pos.y * pointHeight));
 #ifdef DEBUG
-	CCLOG("x: %d , y: %d ", x, y);
+	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
+	CCLOG("Screen.x: %d, Screen.y: %d", x, y);
 #endif // DEBUG
 
 
@@ -304,7 +347,8 @@ Vec2 GameScene::titleCoordForPosition(Vec2 position)
 
 
 #ifdef DEBUG
-	CCLOG("x: %d , y: %d ", x, y);
+	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
+	CCLOG("Screen.x: %d, Screen.y: %d", x, y);
 #endif // DEBUG
 	return Vec2(x, y);
 }

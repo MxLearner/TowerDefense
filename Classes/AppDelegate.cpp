@@ -24,7 +24,6 @@
 
 #include "AppDelegate.h"
 #include "HelloWorldScene.h"
-#include "GameMenuScene.h"
 #include"GameScene.h"
 
 // #define USE_AUDIO_ENGINE 1
@@ -75,9 +74,9 @@ bool AppDelegate::applicationDidFinishLaunching() {
     auto glview = director->getOpenGLView();
     if(!glview) {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
-        glview = GLViewImpl::createWithRect("temp", cocos2d::Rect(0, 0, designResolutionSize.width, designResolutionSize.height));
+        glview = GLViewImpl::createWithRect("CarrotGuard", cocos2d::Rect(0, 0, designResolutionSize.width, designResolutionSize.height));
 #else
-        glview = GLViewImpl::create("temp");
+        glview = GLViewImpl::create("CarrotGuard");
 #endif
         director->setOpenGLView(glview);
     }
@@ -111,6 +110,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
     // create a scene. it's an autorelease object
     //auto scene = HelloWorld::createScene();
+    //auto scene = HelloWorld::create();
     auto scene = GameScene::createSceneWithLevel(1);
     // run
     director->runWithScene(scene);
