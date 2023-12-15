@@ -19,7 +19,7 @@ Scene* GameScene::createSceneWithLevel(int selectLevel)
 	auto scene = Scene::create();
 	
 	auto layer = GameScene::create();
-
+	layer->setName("layer"); // 设个名字
 	scene->addChild(layer);
 	return scene;
 }
@@ -119,7 +119,7 @@ bool GameScene::init()
 	// 把地图锚点和位置都设置为原点，使地图左下角与屏幕左下角对齐
 	_tileMap->setAnchorPoint(Vec2::ZERO);
 	_tileMap->setPosition(Vec2::ZERO);
-
+	_tileMap->setName("_tileMap"); // 设个名字
 	this->addChild(_tileMap, 1);
 
 #ifdef DEBUG
@@ -206,10 +206,11 @@ bool GameScene::init()
 
 
 	// 创建萝卜
-	_carrot = Sprite::createWithSpriteFrameName("Carrot_2.png");
+	_carrot = Sprite::createWithSpriteFrameName(StringUtils::format("Carrot_%d.png", carrotHealth));
 	//_carrot = Sprite::create("carrot.png");
 	_carrot ->setScale(0.4);
 	_carrot->setPosition(carrotX, carrotY);
+	_carrot->setName("carrot"); // 设个名字
 	_tileMap->addChild(_carrot, 2);
 
 
@@ -217,7 +218,7 @@ bool GameScene::init()
 	// 注意屏幕数据的父节点应该是scece ，而不是瓦片地图，因为瓦片地图进行了缩放，
 	// 如果是瓦片地图的子节点基于屏幕的setposition 会进行缩放，被挤出屏幕！！！！
 	// 1. 显示出现了多少波怪物
-	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("% d", _currNum), "Arial", 32);
+	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum), "Arial", 32);
 	_curNumberLabel->setColor(Color3B::RED);
 	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.95);
 	//_tileMap->addChild(_curNumberLabel);
@@ -358,17 +359,21 @@ Vector<MonsterData*> _monsterDatas;   // 当前关卡怪物信息
 Vector<PointDelegate*> _pathPoints;   // 记录有效路径点
 bool _isFinish = false;               // 所有怪物是否全部出现
 */
+// ====================================
+// 生成函数有bug，还有初始显示问题，回来再说，能跑就行
+// 每一波的间隔与同一波生成间隔，导致生成问题，eg 3.0f,1.0f 前几波只能生成2个
 void GameScene::generateMonsters() {
     _currNum = 1;
 
     this->schedule([=](float dt) {
         if (_currNum <=_number ) {
+			_curNumberLabel->setString(StringUtils::format("%d", _currNum));
             generateMonsterWave();
             _currNum++;
         } else {
             unschedule("generateMonsters");
         }
-    }, 3.0f, "generateMonsters");
+    }, 5.0f, "generateMonsters");
 }
 
 void GameScene::generateMonsterWave() {
@@ -378,7 +383,12 @@ void GameScene::generateMonsterWave() {
         if (_currentCount < monsterCount) {
 			// ===========使用 point to point，回来会改的
             auto monster = Monster::createWithSpriteFrameName((*(_monsterDatas.begin()))->getName());
-			monster->setPosition(-100, -100);// 随便放到一个看不见的地方
+#ifdef DEBUG
+			CCLOG("monster++");
+#endif // DEBUG
+
+			monster->setAnchorPoint(Vec2(0.0f, 0.0f));
+			//monster->setPosition(Vec2((*(_pathPoints.begin()))->getX(),(*(_pathPoints.begin()))->getX() ));
             monster->setPointPath(_pathPoints); // 传递路径给怪物
             this->addChild(monster,10);
 			monster->startMoving();
@@ -387,5 +397,5 @@ void GameScene::generateMonsterWave() {
         } else {
             unschedule("generateMonsterWave");
         }
-    }, 0.5f, monsterCount, 0, "generateMonsterWave");
+    }, 1.0f, monsterCount, 0, "generateMonsterWave");
 }

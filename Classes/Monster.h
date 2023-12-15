@@ -61,4 +61,6 @@ public:
 
 	// monster“∆∂Ø
 	void startMoving();
+
+
 };

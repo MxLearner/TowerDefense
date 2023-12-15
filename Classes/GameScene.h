@@ -24,6 +24,7 @@ protected:
 	int _currNum;            // 当前怪物波数
 	int _goldValue;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
+	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
 	float _screenWidth, _screenHeight;  //屏幕宽高
 	//int _count;              // 游戏计数器;
 	//int _delivery;            // 出现怪物取模系数 ？？？
@@ -57,6 +58,14 @@ public:
 	void generateMonsters();
 
 	void generateMonsterWave();
+
+	//getCarrotHealth
+	int getCarrotHealth() {
+		return carrotHealth;
+	}
+	void HurtCarrot() {
+		carrotHealth--;
+	}
 
 	CREATE_FUNC(GameScene);
 };
