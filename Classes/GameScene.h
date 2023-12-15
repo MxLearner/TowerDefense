@@ -19,14 +19,14 @@ protected:
 	TMXTiledMap* _tileMap;   // 地图
 	TMXLayer* _collidable;   // 障碍层
 	std::string _tileFile;   // 关卡地图名称
-	int _number;             // 关卡共有多少波怪
+	int _number;             // 关卡怪物波数
 	int _currentCount;       // 当前怪兽数量
 	int _currNum;            // 当前怪物波数
 	int _goldValue;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	float _screenWidth, _screenHeight;  //屏幕宽高
-	int _count;              // 游戏计数器;
-	int _delivery;            // 出现怪物取模系数 ？？？
+	//int _count;              // 游戏计数器;
+	//int _delivery;            // 出现怪物取模系数 ？？？
 
 	Vector<MonsterData*> _monsterDatas;   // 当前关卡怪物信息
 	Vector<TurretData*> _turretDatas;     // 当前关卡炮台信息
@@ -41,18 +41,22 @@ protected:
 
 public:
 
-	// 选择当前关卡，并创建，通过关卡数
+	// 根据关卡编号创建游戏关卡场景
 	static Scene* createSceneWithLevel(int selectLevel);
-
+	// 关卡场景初始化
 	virtual bool init();
-
+	// 鼠标点击事件
 	void onMouseDown(EventMouse* event);
+	// TMX point ->Screen
+    // 地图格子坐标转化成屏幕坐标
+	Vec2 TMXPosToLocation(Vec2 pos);
+	// Screen ->TMX point
+	// 屏幕坐标转化成地图格子坐标	
+	Vec2 LocationToTMXPos(Vec2 pos);
+	// 生成怪物
+	void generateMonsters();
 
-
-	// TMP ->OPEN GL
-	Vec2 locationForTilePos(Vec2 pos);
-	// OPEN ->tmp
-	Vec2 titleCoordForPosition(Vec2 position);
+	void generateMonsterWave();
 
 	CREATE_FUNC(GameScene);
 };

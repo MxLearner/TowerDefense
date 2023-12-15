@@ -2,6 +2,7 @@
 #include"ui/CocosGUI.h"
 #include"cocos2d.h"
 
+
 using namespace ui;
 USING_NS_CC;
 
@@ -10,7 +11,7 @@ static int currentLevel = 1;  // 当前关卡
 
 
 #define DEBUG
-
+// 根据关卡编号创建游戏关卡场景
 Scene* GameScene::createSceneWithLevel(int selectLevel)
 {   // 获得关卡编号
 	currentLevel = selectLevel;
@@ -22,7 +23,7 @@ Scene* GameScene::createSceneWithLevel(int selectLevel)
 	scene->addChild(layer);
 	return scene;
 }
-
+// 关卡场景初始化
 bool GameScene::init()
 {
 	if (!Layer::init()) {
@@ -38,15 +39,11 @@ bool GameScene::init()
 
 	//****************** 读取关卡数据 ***************
 	
-	// 加载精灵帧，塔与子弹，怪物，萝卜  ======后续改成读完关卡数据后在加载
-	auto spriteFrameCache = SpriteFrameCache::getInstance();
-	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TBList.plist");
-	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Monsters.plist");
-	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Carrots.plist");
+
 	// rapidjson 对象
 	rapidjson::Document document;
 
-	// 根据传递的关卡值解析对应的关卡数据
+	// 根据传递的关卡值selectLevel获得对应的关卡数据文件
 	std::string filePath = FileUtils::getInstance()->
 		fullPathForFilename(StringUtils::format("CarrotGuardRes/level_%d.data", currentLevel));
 
@@ -74,7 +71,7 @@ bool GameScene::init()
 #endif // DEBUG
 
 
-	// 检查是否读到 tilefile数据
+// 检查是否读到 tilefile数据
 #ifdef DEBUG
 	if (document.HasMember("tileFile") && document["tileFile"].IsString()) {
 		const char* tileFileValue = document["tileFile"].GetString();
@@ -87,20 +84,23 @@ bool GameScene::init()
 		CCLOG("Error: not string.");
 	}
 #endif // DEBUG
-
+	//***************进行关卡初始化******************
+	//
 	// 1. 读取地图文件
 	_tileFile = document["tileFile"].GetString();
 	// 2. 读取怪物波数
 	_number = document["number"].GetInt();
-	// 3. 出现怪物取模系数
-	_delivery = 55;
-	// 4. 当前怪物出现的数量
+	// 3. 当前怪物出现的数量
 	_currentCount = 0;
-	// 5. 当前怪物波数
+	// 4. 当前怪物波数
 	_currNum = 1;
-	// 6. 初始化金币数量
+	// 5. 初始化金币数量
 	_goldValue = 200;
-
+	// 加载精灵帧，塔与子弹，怪物，萝卜  =========后续应改为针对关卡数据加载
+	auto spriteFrameCache = SpriteFrameCache::getInstance();
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TBList.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Monsters.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Carrots.plist");
 
 	// 调用TMXTiledMap 读取瓦片地图
 	_tileMap = TMXTiledMap::create(_tileFile);
@@ -110,17 +110,12 @@ bool GameScene::init()
 	// 解决windows下加载地图问题！！！！！！！！
 	//********************************************************************
 
-	 // 获取窗口大小
-    Size winSize = Director::getInstance()->getWinSize();
-#ifdef DEBUG
-	CCLOG("winWidth:  %lf, winHeight:  %lf", winSize.width, winSize.height);
-#endif // DEBUG
 
     // 设置场景容器的大小为窗口大小
-    //this->setContentSize(winSize);
+    //this->setContentSize(size);
 	// 缩放瓦片地图，使其填满整个屏幕
-	_tileMap->setScaleX(winSize.width / _tileMap->getContentSize().width);
-    _tileMap->setScaleY(winSize.height / _tileMap->getContentSize().height);
+	_tileMap->setScaleX(size.width / _tileMap->getContentSize().width);
+    _tileMap->setScaleY(size.height / _tileMap->getContentSize().height);
 	// 把地图锚点和位置都设置为原点，使地图左下角与屏幕左下角对齐
 	_tileMap->setAnchorPoint(Vec2::ZERO);
 	_tileMap->setPosition(Vec2::ZERO);
@@ -188,7 +183,7 @@ bool GameScene::init()
 		// 创建地图坐标
 		Vec2 tilePoint = Vec2(x, y);
 		// 将地图坐标转化成屏幕坐标
-		Vec2 locationPoint = locationForTilePos(tilePoint);
+		Vec2 locationPoint = TMXPosToLocation(tilePoint);
 
 		// Point不能继承Ref，Vector不能存储
 		auto pointDelegate = PointDelegate::create(locationPoint.x, locationPoint.y);
@@ -291,7 +286,8 @@ bool GameScene::init()
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 #endif // DEBUG
 
-
+	// 生成怪物
+	generateMonsters();
 
 
 
@@ -319,9 +315,9 @@ void GameScene::onMouseDown(EventMouse* event)
 
 
 
-// TMP ->Screen
+// TMX point ->Screen
 // 地图格子坐标转化成屏幕坐标
-Vec2 GameScene::locationForTilePos(Vec2 pos)
+Vec2 GameScene::TMXPosToLocation(Vec2 pos)
 {   // 注意 * _tileMap->getScale() ！！！
 	int x = (int)(pos.x * (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR())*_tileMap->getScale());
 	float pointHeight = _tileMap->getTileSize().height / CC_CONTENT_SCALE_FACTOR()*_tileMap->getScale();
@@ -337,13 +333,14 @@ Vec2 GameScene::locationForTilePos(Vec2 pos)
 
 }
 
-// OPEN ->TMP
-Vec2 GameScene::titleCoordForPosition(Vec2 position)
+// Screen ->TMX point
+// 屏幕坐标转化成地图格子坐标
+Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 {
-	int x = (int)(position.x) / (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR());
+	int x = (int)(pos.x) / (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR());
 	float pointHeight = _tileMap->getTileSize().height / CC_CONTENT_SCALE_FACTOR(); 
 
-	int y = (int)((_tileMap->getMapSize().height * pointHeight-position.y )/ pointHeight);
+	int y = (int)((_tileMap->getMapSize().height * pointHeight-pos.y )/ pointHeight);
 
 
 #ifdef DEBUG
@@ -351,4 +348,44 @@ Vec2 GameScene::titleCoordForPosition(Vec2 position)
 	CCLOG("Screen.x: %d, Screen.y: %d", x, y);
 #endif // DEBUG
 	return Vec2(x, y);
+}
+/* 生成怪物
+ static int monsterCount = 5;   // 每一波出现多少怪物
+int _number;             // 关卡怪物波数
+int _currentCount;       // 当前怪兽数量,当前波次已出现多少怪物
+int _currNum;            // 当前怪物波数
+Vector<MonsterData*> _monsterDatas;   // 当前关卡怪物信息
+Vector<PointDelegate*> _pathPoints;   // 记录有效路径点
+bool _isFinish = false;               // 所有怪物是否全部出现
+*/
+void GameScene::generateMonsters() {
+    _currNum = 1;
+
+    this->schedule([=](float dt) {
+        if (_currNum <=_number ) {
+            generateMonsterWave();
+            _currNum++;
+        } else {
+            unschedule("generateMonsters");
+        }
+    }, 3.0f, "generateMonsters");
+}
+
+void GameScene::generateMonsterWave() {
+    _currentCount = 0;
+
+    this->schedule([=](float dt) {
+        if (_currentCount < monsterCount) {
+			// ===========使用 point to point，回来会改的
+            auto monster = Monster::createWithSpriteFrameName((*(_monsterDatas.begin()))->getName());
+			monster->setPosition(-100, -100);// 随便放到一个看不见的地方
+            monster->setPointPath(_pathPoints); // 传递路径给怪物
+            this->addChild(monster,10);
+			monster->startMoving();
+
+            _currentCount++;
+        } else {
+            unschedule("generateMonsterWave");
+        }
+    }, 0.5f, monsterCount, 0, "generateMonsterWave");
 }
