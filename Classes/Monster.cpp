@@ -11,12 +11,20 @@
 	float _speed=100;        // 移动速度
 */
 void Monster::startMoving()
-{   Vector<FiniteTimeAction*> moveActions;
+{   
+    Vector<FiniteTimeAction*> moveActions;
+    int mark = 1;
 	for (auto pathPoint : _pathPoints) {
 		// 将目的坐标转化成vec2
 		Vec2 targetPos;
 		targetPos.x = pathPoint->getX();
 		targetPos.y = pathPoint->getY();
+        // 在第一个路线位置，先设置初始位置
+        if (mark == 1) {
+            this->setPosition(targetPos);
+            mark--;
+            continue;
+        }
 		// 创建一个 MoveTo 动作，使怪物移动到目标位置
 		auto moveAction = MoveTo::create(0.5, targetPos);
 		moveActions.pushBack(moveAction);

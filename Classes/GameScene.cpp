@@ -316,7 +316,7 @@ bool GameScene::init()
 
 	return true;
 }
-
+// 鼠标点击建塔
 void GameScene::onMouseDown(EventMouse* event)
 {
 	// 获取鼠标点击的坐标
@@ -353,6 +353,10 @@ Vec2 GameScene::TMXPosToLocation(Vec2 pos)
 	int x = (int)(pos.x * (_tileMap->getTileSize().width*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()));
 	float pointHeight = _tileMap->getTileSize().height*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR();
 	int y = (int)((_tileMap->getMapSize().height * pointHeight) - (pos.y * pointHeight));
+	// 现在这个坐标转化是转到左上角eg: (0,0)->(0,640)   // window游戏屏幕设置(960,640)
+	// 我们再将其转化成格子的中心
+	x += (_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()) / 2;
+	y-=(_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()) / 2;
 #ifdef DEBUG
 	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
 	CCLOG("Screen.x: %d, Screen.y: %d", x, y);
@@ -417,8 +421,8 @@ void GameScene::generateMonsterWave() {
 #ifdef DEBUG
 			CCLOG("monster++");
 #endif // DEBUG
-
-			monster->setAnchorPoint(Vec2(0.0f, 0.0f));
+			// 锚点设为中心
+			monster->setAnchorPoint(Vec2(0.5f, 0.5f));
 			//monster->setPosition(Vec2((*(_pathPoints.begin()))->getX(),(*(_pathPoints.begin()))->getX() ));
 			// 初始位置设置问题，回来会改的，
 			// ...怎么这么多回来要改的

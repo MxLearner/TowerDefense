@@ -21,7 +21,7 @@ private:
 	int _buildGold=100;         // 建造所需金币
 	int _updateGold = 100;     // 升级所需金币
 	int _level = 1;            // 当前等级
-	int _range = 200;           // 攻击范围
+	int _range = 100;           // 攻击范围
  
 public:
 
@@ -39,7 +39,7 @@ public:
 			}
 			// 炮台节点位置有点问题，回来调整
             // 因为TMX坐标转化是（0，0）->（0，640），所以将塔基锚点设为左上角，后续可以再改
-			sprite->setAnchorPoint(Vec2(0, 1));
+			sprite->setAnchorPoint(Vec2(0.5, 0.5));
 			turret->setAnchorPoint(Vec2(0.5, 0.5));// 炮台锚点设为中间，方便后续旋转 
 			// 子节点这个坐标设置是基于父节点左下角为坐标系，单位是分辨率像素
 			turret->setPosition(Vec2(20, 20));// 先这样微调一下吧
