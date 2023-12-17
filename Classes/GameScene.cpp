@@ -30,9 +30,9 @@ bool GameScene::init()
 		return false;
 	}
 	// 获取屏幕宽高
-	Size size = Director::getInstance()->getVisibleSize();
-	_screenWidth = size.width;
-	_screenHeight = size.height;
+	screenSize = Director::getInstance()->getVisibleSize();
+	_screenWidth = screenSize.width;
+	_screenHeight = screenSize.height;
 #ifdef DEBUG
 	CCLOG("screenWidth:  %lf, screenHeight:  %lf", _screenWidth, _screenHeight);
 #endif // DEBUG
@@ -45,7 +45,8 @@ bool GameScene::init()
 
 	// 根据传递的关卡值selectLevel获得对应的关卡数据文件
 	std::string filePath = FileUtils::getInstance()->
-		fullPathForFilename(StringUtils::format("CarrotGuardRes/level_%d.data", currentLevel));
+		fullPathForFilename(StringUtils::format("CarrotGuardRes/level_%d.data", currentLevel)); 
+	// ======加载tmx的文件路径有问题，原因不明，疑似受神秘力量干扰，故改名level__1.tmx
 
 #ifdef DEBUG
 	CCLOG("File Path: %s", filePath.c_str());
@@ -114,8 +115,8 @@ bool GameScene::init()
     // 设置场景容器的大小为窗口大小
     //this->setContentSize(size);
 	// 缩放瓦片地图，使其填满整个屏幕
-	_tileMap->setScaleX(size.width / _tileMap->getContentSize().width);
-    _tileMap->setScaleY(size.height / _tileMap->getContentSize().height);
+	_tileMap->setScaleX(screenSize.width / _tileMap->getContentSize().width);
+    _tileMap->setScaleY(screenSize.height / _tileMap->getContentSize().height);
 	// 把地图锚点和位置都设置为原点，使地图左下角与屏幕左下角对齐
 	_tileMap->setAnchorPoint(Vec2::ZERO);
 	_tileMap->setPosition(Vec2::ZERO);
@@ -141,7 +142,22 @@ bool GameScene::init()
 
 	// 获取障碍层，设置障碍层隐藏
 	_collidable = _tileMap->getLayer("collidable");
-	_collidable->setVisible(true);  // ========================= 回来改成false
+	_collidable->setVisible(true);  // ========================= 回来改成false,没必要改，除非到了要建造可攻击建筑物时再说
+	// ==============这段代码很烂，但是我就想直接这样用
+	// 初始化可建造炮塔数组
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 10; j++) {
+			isTurretAble[i][j] = 0;
+		}
+	}
+	// 将障碍物位置设为1,表示不能建炮塔了
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 10; j++) {
+			if (_collidable->getTileGIDAt(Vec2(i, j)) != 0) {// ====有点奇怪了
+				isTurretAble[i][j] = 1;
+			}
+		}
+	}
 
 	// 获得关卡设定的怪物
 	const rapidjson::Value& monsterArray = document["monsters"];
@@ -286,8 +302,12 @@ bool GameScene::init()
 	listener->onMouseDown = CC_CALLBACK_1(GameScene::onMouseDown, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 #endif // DEBUG
+	// ****************调用update()
+	scheduleUpdate();
 
-	// 生成怪物
+
+
+	// ******************生成怪物
 	generateMonsters();
 
 
@@ -297,20 +317,28 @@ bool GameScene::init()
 
 void GameScene::onMouseDown(EventMouse* event)
 {
-#ifdef DEBUG
-    // 获取鼠标点击的坐标
-    Vec2 clickPos = event->getLocation();
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
 	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
-    // 注意两个坐标位置
-	// OpenGL坐标系，左上角0，0
-	// 输出鼠标点击的坐标
-    CCLOG(" clickPos.x = %f, clickPos.y = %f", clickPos.x, clickPos.y);
-	// 输出鼠标点击的屏幕坐标
-	//屏幕坐标系 ，左下角 0，0
-    CCLOG("screenPos.x = %f, screenPos.y = %f", screenPos.x, screenPos.y);
-#endif // DEBUG
-
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+	if (isTurretAble[mapX][mapY] == 0) {
+		isTurretAble[mapX][mapY] = 2; // 代表上面是炮塔
+		// 先固定建瓶子，回来再改
+		std::string name = (*(_turretDatas.begin()))->getName();
+		auto turret = Turret::createWithSpriteFrameName(name);
+		_currentTurrets.pushBack(turret);
+		turret->setName(name);
+		//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
+		screenPos = TMXPosToLocation(mapPos);
+		turret->setPosition(screenPos);
+		this->addChild(turret, 10);
+	}
 
 }
 
@@ -320,8 +348,8 @@ void GameScene::onMouseDown(EventMouse* event)
 // 地图格子坐标转化成屏幕坐标
 Vec2 GameScene::TMXPosToLocation(Vec2 pos)
 {   // 注意 * _tileMap->getScale() ！！！
-	int x = (int)(pos.x * (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR())*_tileMap->getScale());
-	float pointHeight = _tileMap->getTileSize().height / CC_CONTENT_SCALE_FACTOR()*_tileMap->getScale();
+	int x = (int)(pos.x * (_tileMap->getTileSize().width*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()));
+	float pointHeight = _tileMap->getTileSize().height*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR();
 	int y = (int)((_tileMap->getMapSize().height * pointHeight) - (pos.y * pointHeight));
 #ifdef DEBUG
 	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
@@ -338,15 +366,15 @@ Vec2 GameScene::TMXPosToLocation(Vec2 pos)
 // 屏幕坐标转化成地图格子坐标
 Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 {
-	int x = (int)(pos.x) / (_tileMap->getTileSize().width / CC_CONTENT_SCALE_FACTOR());
-	float pointHeight = _tileMap->getTileSize().height / CC_CONTENT_SCALE_FACTOR(); 
+	int x = (int)(pos.x) / (_tileMap->getTileSize().width*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR());
+	float pointHeight = _tileMap->getTileSize().height*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR(); 
 
-	int y = (int)((_tileMap->getMapSize().height * pointHeight-pos.y )/ pointHeight);
-
+	//int y = (int)((_tileMap->getMapSize().height*_tileMap->getScale() * pointHeight-pos.y )/ pointHeight);
+	int y = (int)((screenSize.height - pos.y) / pointHeight);
 
 #ifdef DEBUG
 	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
-	CCLOG("Screen.x: %d, Screen.y: %d", x, y);
+	CCLOG("TMX.x: %d, TMX.y: %d", x, y);
 #endif // DEBUG
 	return Vec2(x, y);
 }
@@ -383,12 +411,15 @@ void GameScene::generateMonsterWave() {
         if (_currentCount < monsterCount) {
 			// ===========使用 point to point，回来会改的
             auto monster = Monster::createWithSpriteFrameName((*(_monsterDatas.begin()))->getName());
+			_currentMonsters.pushBack(monster);
 #ifdef DEBUG
 			CCLOG("monster++");
 #endif // DEBUG
 
 			monster->setAnchorPoint(Vec2(0.0f, 0.0f));
 			//monster->setPosition(Vec2((*(_pathPoints.begin()))->getX(),(*(_pathPoints.begin()))->getX() ));
+			// 初始位置设置问题，回来会改的，
+			// ...怎么这么多回来要改的
             monster->setPointPath(_pathPoints); // 传递路径给怪物
             this->addChild(monster,10);
 			monster->startMoving();
@@ -398,4 +429,11 @@ void GameScene::generateMonsterWave() {
             unschedule("generateMonsterWave");
         }
     }, 1.0f, monsterCount, 0, "generateMonsterWave");
+}
+
+void GameScene::update(float dt)
+{
+	for (auto turret : _currentTurrets) {
+		turret->update(dt);
+	}
 }

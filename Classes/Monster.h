@@ -2,17 +2,17 @@
 
 
 #include"cocos2d.h"
-#include"SpriteBase.h"
 #include"ui/CocosGUI.h"
 #include"PointDelegate.h"
+#include"GameScene.h"
 
 USING_NS_CC;
 using namespace ui;
 
 // Monster类
-class Monster : public SpriteBase {
+class Monster : public Sprite {
 private:
-	int _lifeValue;        // 生命值
+	int _lifeValue=10;        // 生命值
 	LoadingBar* _HP;       // 血条
 	float _HPInterval;     //  血条更新量
 	Vector<PointDelegate*> _pathPoints;   // 记录有效路径点

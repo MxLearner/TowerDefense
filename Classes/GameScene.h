@@ -16,6 +16,7 @@ USING_NS_CC;
 class GameScene :public Layer
 {
 protected:
+	Size screenSize;           // 获取屏幕size 
 	TMXTiledMap* _tileMap;   // 地图
 	TMXLayer* _collidable;   // 障碍层
 	std::string _tileFile;   // 关卡地图名称
@@ -26,8 +27,6 @@ protected:
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
 	float _screenWidth, _screenHeight;  //屏幕宽高
-	//int _count;              // 游戏计数器;
-	//int _delivery;            // 出现怪物取模系数 ？？？
 
 	Vector<MonsterData*> _monsterDatas;   // 当前关卡怪物信息
 	Vector<TurretData*> _turretDatas;     // 当前关卡炮台信息
@@ -40,13 +39,17 @@ protected:
 	Vector<Monster*>_monsterVector;       // 存储出现怪物集合
 	bool _isFinish = false;               // 所有怪物是否全部出现
 
+	int isTurretAble[15][10];               // 可建造炮台的位置地图
+	Vector<Monster*> _currentMonsters;       // 场上现存的怪物
+	Vector<Turret*> _currentTurrets;         // 场上现存的怪物
+
 public:
 
 	// 根据关卡编号创建游戏关卡场景
 	static Scene* createSceneWithLevel(int selectLevel);
 	// 关卡场景初始化
 	virtual bool init();
-	// 鼠标点击事件
+	// 鼠标点击事件,用于创建炮台
 	void onMouseDown(EventMouse* event);
 	// TMX point ->Screen
     // 地图格子坐标转化成屏幕坐标
@@ -63,9 +66,32 @@ public:
 	int getCarrotHealth() {
 		return carrotHealth;
 	}
+	// 有怪物到达终点，对萝卜造成伤害，并判断游戏是否失败
 	void HurtCarrot() {
 		carrotHealth--;
+        // 判断游戏是否结束
+        if (carrotHealth<=0) {// 先<=0 这样写
+            // 游戏结束逻辑，例如显示游戏结束画面、重置游戏等
+            // 这里只是一个示例，你需要根据实际情况实现
+            CCLOG("Game Over!");
+        }
+        else {
+			if (_carrot != nullptr) {
+				_carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", carrotHealth));
+			}
+    
+        }
 	}
+	// 从数组中删除场上怪物
+	void removeMonster(Monster* monster) {
+		_currentMonsters.eraseObject(monster);
+	}
+	// 获得现存怪物
+	const Vector<Monster*>& getMonsters()const {
+		return _currentMonsters;
+	}
+
+	virtual void update(float dt) override;
 
 	CREATE_FUNC(GameScene);
 };

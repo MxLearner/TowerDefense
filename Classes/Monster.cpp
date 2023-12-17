@@ -1,5 +1,5 @@
 #include"Monster.h"
-#include"GameScene.h"
+
 
 
 #define DEBUG
@@ -29,24 +29,25 @@ void Monster::startMoving()
     // 在动作序列完成后执行回调，移除怪物
 	// 回调函数执行到达终点逻辑：carrot 掉血，判断游戏是否结束
     auto callback = CallFunc::create([this]() {
-        removeFromParent();
-        // 获取场景
+        // 获取当前场景
         auto Scene = Director::getInstance()->getRunningScene();
 
         if (Scene) {
-            // 获取 Carrot 对象
+            // 获取 layer 对象
             auto layer = dynamic_cast<GameScene*>(Scene->getChildByName("layer"));
 #ifdef DEBUG
             if (layer == nullptr) {
                 CCLOG("not found layer");
             }
 #endif // DEBUG
-			auto _tileMap = layer->getChildByName("_tileMap");
+            // 获取tilemap
+			auto _tileMap = dynamic_cast<TMXTiledMap*>(layer->getChildByName("_tileMap"));
 #ifdef DEBUG
             if (_tileMap == nullptr) {
                 CCLOG("not found _tileMap");
             }
 #endif // DEBUG
+            // 获取carrot
             auto carrot=dynamic_cast<Sprite*>(_tileMap->getChildByName("carrot"));
 #ifdef DEBUG
             if (carrot == nullptr) {
@@ -57,20 +58,15 @@ void Monster::startMoving()
             if (carrot) {
                 // 执行到达终点的逻辑，例如减少 Carrot 的生命值
                 layer->HurtCarrot();
-                
-
-                // 判断游戏是否结束
-                if (layer->getCarrotHealth()<=0) {// 先<=0 这样写
-                    // 游戏结束逻辑，例如显示游戏结束画面、重置游戏等
-                    // 这里只是一个示例，你需要根据实际情况实现
-                    CCLOG("Game Over!");
-                }
-                else {
-                    carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", layer->getCarrotHealth()));
-                }
-
             }
+        // *******移除怪物
+        // 从场景移除
+        removeFromParent();
+        // 从现存怪物数组中移除
+        layer->removeMonster(this);
+        
         }
+		
     });
 
     // 使用 s 同时执行动作序列和回调
