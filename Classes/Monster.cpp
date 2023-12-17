@@ -1,6 +1,5 @@
 #include"Monster.h"
-
-
+#include"GameScene.h"
 
 #define DEBUG
 /*

@@ -1,6 +1,8 @@
+
+
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
-#include"cocos2d.h"
+
 
 
 using namespace ui;
@@ -429,6 +431,30 @@ void GameScene::generateMonsterWave() {
             unschedule("generateMonsterWave");
         }
     }, 1.0f, monsterCount, 0, "generateMonsterWave");
+}
+
+// 有怪物到达终点，对萝卜造成伤害，并判断游戏是否失败
+
+void GameScene::HurtCarrot() {
+	carrotHealth--;
+	// 判断游戏是否结束
+	if (carrotHealth <= 0) {// 先<=0 这样写
+		// 游戏结束逻辑，例如显示游戏结束画面、重置游戏等
+		// 这里只是一个示例，你需要根据实际情况实现
+		CCLOG("Game Over!");
+	}
+	else {
+		if (_carrot != nullptr) {
+			_carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", carrotHealth));
+		}
+
+	}
+}
+
+// 从数组中删除场上怪物
+
+void GameScene::removeMonster(Monster* monster) {
+	_currentMonsters.eraseObject(monster);
 }
 
 void GameScene::update(float dt)

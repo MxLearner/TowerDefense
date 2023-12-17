@@ -1,11 +1,14 @@
-#pragma once
+#ifndef _Monster_H_
+#define _Monster_H_
 
 
-#include"cocos2d.h"
+
+
+
+
 #include"ui/CocosGUI.h"
+#include"cocos2d.h"
 #include"PointDelegate.h"
-#include"GameScene.h"
-
 USING_NS_CC;
 using namespace ui;
 
@@ -64,3 +67,5 @@ public:
 
 
 };
+
+#endif // !_Monster_H

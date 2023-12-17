@@ -1,8 +1,12 @@
-#pragma once
+#ifndef _Turret_H_
+#define _Turret_H_
+
+
+
+
 
 #include"cocos2d.h"
 #include"Bullet.h"
-#include"GameScene.h"
 #include"Monster.h"
 
 USING_NS_CC;
@@ -17,7 +21,7 @@ private:
 	int _buildGold=100;         // 建造所需金币
 	int _updateGold = 100;     // 升级所需金币
 	int _level = 1;            // 当前等级
-	int _range = 100;           // 攻击范围
+	int _range = 200;           // 攻击范围
  
 public:
 
@@ -30,6 +34,7 @@ public:
 			sprite->autorelease();
 			auto turret = new Sprite();
 			if (turret && turret->initWithSpriteFrameName(turretName)) {
+				turret->setName("turret");
 				sprite->addChild(turret);
 			}
 			// 炮台节点位置有点问题，回来调整
@@ -45,33 +50,9 @@ public:
 		CC_SAFE_DELETE(sprite);
 		return nullptr;
 	}
-
-	void ShootAtMonster(Monster* target) {
-		// 计算炮塔转向角度
-		Vec2 targetPos = target->getPosition();
-		Vec2 turretPos = getPosition();
-		float angle = CC_RADIANS_TO_DEGREES(turretPos.getAngle(targetPos));
-		// 设置炮塔旋转
-		setRotation(angle);
-		// 创建并发射子弹
-		//////////////////////
-	}
-	void update(float dt) {
-		// 获取当前场景
-        auto Scene = Director::getInstance()->getRunningScene();
-        // 获取 layer 对象
-        auto layer = dynamic_cast<GameScene*>(Scene->getChildByName("layer"));
-		const auto& monsters = layer->getMonsters();
-		for (const auto& monster : monsters) {
-			float distance = getPosition().distance(monster->getPosition());
-
-			// 检测是否在射程内
-			if (distance <= _range) {
-				// 炮塔攻击怪物
-				ShootAtMonster(monster);
-			}
-		}
-	}
+	
+	void ShootAtMonster(Monster* target);
+	void update(float dt);
 
 
 	// set get
@@ -104,3 +85,5 @@ public:
 		return _range;
 	}
 };
+
+#endif // !_Turret_H_

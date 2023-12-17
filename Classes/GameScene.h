@@ -1,15 +1,16 @@
-#pragma once
+#ifndef _Game_Scene_H_
+#define _Game_Scene_H_
+
+
 
 #include"cocos2d.h"
+#include"Monster.h"
+#include"Turret.h"
+#include"Bullet.h"
 #include"PointDelegate.h"
 #include"TurretData.h"
 #include"MonsterData.h"
 #include"json/document.h"
-#include"Monster.h"
-#include"Turret.h"
-#include"Bullet.h"
-
-
 USING_NS_CC;
 
 // 游戏逻辑
@@ -36,7 +37,7 @@ protected:
 	Label* _curNumberLabel;               // 显示当前怪物波数
 	Label* _goldLabel;                    // 显示当前玩家金币
 
-	Vector<Monster*>_monsterVector;       // 存储出现怪物集合
+	Vector<Monster*> _monsterVector;       // 存储出现怪物集合
 	bool _isFinish = false;               // 所有怪物是否全部出现
 
 	int isTurretAble[15][10];               // 可建造炮台的位置地图
@@ -67,27 +68,11 @@ public:
 		return carrotHealth;
 	}
 	// 有怪物到达终点，对萝卜造成伤害，并判断游戏是否失败
-	void HurtCarrot() {
-		carrotHealth--;
-        // 判断游戏是否结束
-        if (carrotHealth<=0) {// 先<=0 这样写
-            // 游戏结束逻辑，例如显示游戏结束画面、重置游戏等
-            // 这里只是一个示例，你需要根据实际情况实现
-            CCLOG("Game Over!");
-        }
-        else {
-			if (_carrot != nullptr) {
-				_carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", carrotHealth));
-			}
-    
-        }
-	}
+	void HurtCarrot();
 	// 从数组中删除场上怪物
-	void removeMonster(Monster* monster) {
-		_currentMonsters.eraseObject(monster);
-	}
+	void removeMonster(Monster* monster);
 	// 获得现存怪物
-	const Vector<Monster*>& getMonsters()const {
+	 Vector<Monster*> & getMonsters() {
 		return _currentMonsters;
 	}
 
@@ -96,3 +81,4 @@ public:
 	CREATE_FUNC(GameScene);
 };
 
+#endif // !_Game_Scene_H
