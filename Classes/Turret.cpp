@@ -1,7 +1,17 @@
 #include "Turret.h"
 #include"GameScene.h"
+#include"Bullet.h"
 #define DEBUG
- void Turret::ShootAtMonster(Monster* target) {
+bool Turret::init()
+{   // 每一帧追踪怪物
+	scheduleUpdate();
+	// 创建并发射子弹
+	this->schedule([this](float dt) {
+		ShootBullet();
+		}, 0.5f, "shootBullet");
+	return true;
+}
+void Turret::ShootAtMonster(Monster* target) {
 	// 计算炮塔转向角度
 	Vec2 targetPos = target->getPosition();
 	Vec2 turretPos = getPosition();
@@ -19,8 +29,7 @@
 	//setRotation 函数使用的是逆时针旋转的坐标系！！！！！
 	// 反正-1.0*angle 是对的，我也不知道为什么
 	this->getChildByName("turret")->setRotation(-1.0*angle);
-	// 创建并发射子弹
-	//////////////////////
+
 }
 
  void Turret::update(float dt) {
@@ -39,7 +48,35 @@
 		 if (distance <= _range) {
 			 // 炮塔攻击怪物
 			 ShootAtMonster(monster);
+			 _monster = monster;
 			 break; // 追踪最靠前的怪物，且只追一个
 		 }
+		 else {
+			 _monster = nullptr;
+		 }
 	 }
+ }
+
+ void Turret::ShootBullet()
+ {
+	 if (_monster == nullptr) {
+		 return;
+	 }
+	 // 用自己存的一份，因为_monster 每一帧都变化，容易产生执行时变成nullpter
+	 Monster* monster = _monster;
+	 std::string bulletName = getName() + "_bullet.png";
+	 auto bullet = Bullet::createWithSpriteFrameName(bulletName);
+	 bullet->setPosition(getPosition());
+	 Vec2 temp = bullet->getPosition();
+	 getParent()->addChild(bullet, 9); // 位置比塔基低一层这样可以盖住
+	 Vec2 targetPos = monster->getPosition();
+	 auto moveTo = MoveTo::create(0.2f, targetPos);
+	 auto damageCallback = CallFunc::create([=]() {
+		 int curLifeValue = monster->getLifeValue() - bullet->getDamage();
+		 monster->setLifeValue(curLifeValue);
+		 bullet->removeFromParent();
+		 });
+	 auto sequence = Sequence::create(moveTo, damageCallback, nullptr);
+	 bullet->runAction(sequence);
+	 
  }

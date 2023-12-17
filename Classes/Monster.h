@@ -34,7 +34,7 @@ public:
 		return nullptr;		
 	}
 
-
+	bool init();
 	// set get 
 	void setLifeValue(int lifeValue) {
 		_lifeValue = lifeValue;
@@ -65,6 +65,12 @@ public:
 	// monster“∆∂Ø
 	void startMoving();
 
+	void setGold(int gold) {
+		_gold = gold;
+	}
+	int getGold() {
+		return _gold;
+	}
 
 };
 

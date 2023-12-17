@@ -22,6 +22,7 @@ private:
 	int _updateGold = 100;     // 升级所需金币
 	int _level = 1;            // 当前等级
 	int _range = 100;           // 攻击范围
+	Monster* _monster = nullptr;  // 当前炮塔是否追踪到了怪物
  
 public:
 
@@ -50,17 +51,19 @@ public:
 		CC_SAFE_DELETE(sprite);
 		return nullptr;
 	}
-	
+	bool init();
+
+
 	void ShootAtMonster(Monster* target);
 	void update(float dt);
-
-
+	// 发射子弹
+	void ShootBullet();
 	// set get
 
 	void setName(std::string name) {
 		_name = name;
 	}
-	std::string getname() {
+	std::string getName() {
 		return _name;
 	}
 

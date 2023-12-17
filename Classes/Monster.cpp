@@ -2,6 +2,10 @@
 #include"GameScene.h"
 
 #define DEBUG
+bool Monster::init()
+{
+    return true;
+}
 /*
 	int _lifeValue;        // ÉúÃüÖµ
 	LoadingBar* _HP;       // ÑªÌõ

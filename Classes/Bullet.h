@@ -29,7 +29,7 @@ public:
 	void setDamage(int damage) {
 		_damage = damage;
 	}
-	bool isDamage() {
+	bool getDamage() {
 		return _damage;
 	}
 };

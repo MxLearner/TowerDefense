@@ -305,7 +305,8 @@ bool GameScene::init()
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 #endif // DEBUG
 	// ****************调用update()
-	scheduleUpdate();
+	// 注释掉好像也没影响，回来再看看每一帧调用是怎么回事
+	//scheduleUpdate();
 
 
 
@@ -316,7 +317,7 @@ bool GameScene::init()
 
 	return true;
 }
-// 鼠标点击建塔
+// *******************************************鼠标点击建塔
 void GameScene::onMouseDown(EventMouse* event)
 {
 	// 获取鼠标点击的坐标
@@ -339,6 +340,7 @@ void GameScene::onMouseDown(EventMouse* event)
 		//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
 		screenPos = TMXPosToLocation(mapPos);
 		turret->setPosition(screenPos);
+		turret->init();
 		this->addChild(turret, 10);
 	}
 
@@ -396,6 +398,7 @@ bool _isFinish = false;               // 所有怪物是否全部出现
 // ====================================
 // 生成函数有bug，还有初始显示问题，回来再说，能跑就行
 // 每一波的间隔与同一波生成间隔，导致生成问题，eg 3.0f,1.0f 前几波只能生成2个
+// 现在理解了生成一波怪的整个时间是5.0f
 void GameScene::generateMonsters() {
     _currNum = 1;
 
@@ -423,9 +426,6 @@ void GameScene::generateMonsterWave() {
 #endif // DEBUG
 			// 锚点设为中心
 			monster->setAnchorPoint(Vec2(0.5f, 0.5f));
-			//monster->setPosition(Vec2((*(_pathPoints.begin()))->getX(),(*(_pathPoints.begin()))->getX() ));
-			// 初始位置设置问题，回来会改的，
-			// ...怎么这么多回来要改的
             monster->setPointPath(_pathPoints); // 传递路径给怪物
             this->addChild(monster,10);
 			monster->startMoving();
@@ -463,7 +463,18 @@ void GameScene::removeMonster(Monster* monster) {
 
 void GameScene::update(float dt)
 {
-	for (auto turret : _currentTurrets) {
-		turret->update(dt);
+	Vector<Monster*> monstersToRemove;
+	for (auto monster : _currentMonsters) {
+		if (monster->getLifeValue() <= 0) {
+			
+			_goldValue += monster->getGold();
+			monstersToRemove.pushBack(monster);
+		}
 	}
+	// 在迭代容器的过程中删除元素是不安全的，因为会导致迭代器失效
+	for (auto monster : monstersToRemove) {
+		monster->removeFromParent();
+		_currentMonsters.eraseObject(monster);
+	}
+	_goldLabel ->setString(StringUtils::format("gold: %d", _goldValue));
 }
