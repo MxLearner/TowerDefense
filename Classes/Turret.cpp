@@ -4,6 +4,7 @@
 #define DEBUG
 bool Turret::init()
 {   // 每一帧追踪怪物
+	_monster = nullptr;
 	scheduleUpdate();
 	// 创建并发射子弹
 	this->schedule([this](float dt) {
@@ -59,23 +60,30 @@ void Turret::ShootAtMonster(Monster* target) {
 
  void Turret::ShootBullet()
  {
-	 if (_monster == nullptr) {
+	 if (_monster == nullptr||_monster->getLifeValue()<=0) {
 		 return;
 	 }
-	 // 用自己存的一份，因为_monster 每一帧都变化，容易产生执行时变成nullpter
+	 // 注意monster访问异常，严重bug！！！！！！！！！！！
+	 //**********************************************
+	 //**********************************************
+	 Vec2 targetPos = _monster->getPosition();
 	 Monster* monster = _monster;
 	 std::string bulletName = getName() + "_bullet.png";
 	 auto bullet = Bullet::createWithSpriteFrameName(bulletName);
 	 bullet->setPosition(getPosition());
 	 Vec2 temp = bullet->getPosition();
 	 getParent()->addChild(bullet, 9); // 位置比塔基低一层这样可以盖住
-	 Vec2 targetPos = monster->getPosition();
+	 
 	 auto moveTo = MoveTo::create(0.2f, targetPos);
 	 auto damageCallback = CallFunc::create([=]() {
-		 int curLifeValue = monster->getLifeValue() - bullet->getDamage();
-		 monster->setLifeValue(curLifeValue);
+		 if (monster != nullptr) {
+			 int curLifeValue = monster->getLifeValue() - bullet->getDamage();
+			 monster->setLifeValue(curLifeValue);
+			 
+		 }
 		 bullet->removeFromParent();
 		 });
+		 
 	 auto sequence = Sequence::create(moveTo, damageCallback, nullptr);
 	 bullet->runAction(sequence);
 	 
