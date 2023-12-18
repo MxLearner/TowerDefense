@@ -9,17 +9,19 @@ USING_NS_CC;
 class TurretData :public Ref
 {
 private:
-	std::string _name;       // 炮台名称
-	int _gold;               // 建造所需金币
-	std::string _bulletName;  // 炮台发射子弹名
-
+	std::string _name;       // 炮台名称,非文件路径，eg："TB"
+	int _cost1;               // 建造升级所需金币
+	int _cost2;
+	int _cost3;
+	float _range;
+	int _damage;
 public:
 
 	// 创造TurretData
 	static TurretData* create()
 	{
 		TurretData* sprite = new TurretData();
-		if (sprite) 
+		if (sprite)
 		{
 			sprite->autorelease();
 			return sprite;
@@ -36,17 +38,36 @@ public:
 		return _name;
 	}
 
-	void setGold(int gold) {
-		_gold = gold;
+	void setCost1(int cost1) {
+		_cost1 = cost1;
 	}
-	int getGold() {
-		return _gold;
+	int getCost1() {
+		return _cost1;
 	}
 
-	void setBulletName(std::string bulletName) {
-		_bulletName = bulletName;
+	void setCost2(int cost2) {
+		_cost2 = cost2;
 	}
-	std::string getBulletName() {
-		return _bulletName;
+	int getCost2() {
+		return _cost2;
+	}
+	void setCost3(int cost3) {
+		_cost3 = cost3;
+	}
+	int getCost3() {
+		return _cost3;
+	}
+
+	void setRange(float range) {
+		_range = range;
+	}
+	float getRange() {
+		return _range;
+	}
+	void setDamage(int damage) {
+		_damage = damage;
+	}
+	int getDamage() {
+		return _damage;
 	}
 };

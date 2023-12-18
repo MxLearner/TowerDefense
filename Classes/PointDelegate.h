@@ -9,8 +9,8 @@ USING_NS_CC;
 class PointDelegate : public Ref
 {
 private:
-	float _x;
-	float _y;
+	float _x=0;
+	float _y=0;
 
 public:
 	static PointDelegate* create(float x, float y)

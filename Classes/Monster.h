@@ -16,11 +16,12 @@ using namespace ui;
 class Monster : public Sprite {
 private:
 	int _lifeValue=10;        // 生命值
-	LoadingBar* _HP;       // 血条
+	LoadingBar* _HP;       // 进度条效果表示血条
 	float _HPInterval;     //  血条更新量
 	Vector<PointDelegate*> _pathPoints;   // 记录有效路径点
 	int _gold=10;         // 消灭怪物获得的金币
-	float _speed=10;        // 移动速度
+	float _speed=1;        // 移动速度
+	bool isLastPoint = false;  // 怪物到达终点？
 
 public:
 	// 使用精灵帧创建
@@ -70,6 +71,14 @@ public:
 	}
 	int getGold() {
 		return _gold;
+	}
+	void setSpeed(float speed) {
+		_speed = speed;
+	}
+
+
+	bool getisLastPoint() {
+		return isLastPoint;
 	}
 
 };

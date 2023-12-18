@@ -1,32 +1,204 @@
 {
-    "tileFile":"CarrotGuardRes/level__1.tmx",
-    "number":5,
-    "monsters":
-            [{"name":"Monster_1.png","lifeValue":10,"gold":15}],
-    "turrets":
-            [{"name":"TB","gold":100,"bulletName":"TB_bullet.png"}],
-    "path":[
-        {"x":0,"y":6},
-        {"x":1,"y":6},
-        {"x":2,"y":6},
-        {"x":3,"y":6},
-        {"x":4,"y":6},
-        {"x":5,"y":6},
-        {"x":5,"y":7},
-        {"x":6,"y":7},
-        {"x":7,"y":7},
-        {"x":8,"y":7},
-        {"x":9,"y":7},
-        {"x":9,"y":6},
-        {"x":9,"y":5},
-        {"x":9,"y":4},
-        {"x":9,"y":3},
-        {"x":9,"y":2},
-        {"x":10,"y":2},
-        {"x":11,"y":2},
-        {"x":12,"y":2},
-        {"x":13,"y":2},
-        {"x":14,"y":2}
-    
-    ]
+  "tileFile": "CarrotGuardRes/LeveL_1.tmx", 
+  "monsterAll": 15,                         
+  "monsterWave":3,                         
+  "everyWave":[                            
+    0,4,9,15               
+  ],
+  "monsters": [                             
+    {
+      "name": "Monster_2.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },
+    {
+      "name": "Monster_3.png",
+      "lifeValue": 5,
+      "gold": 30,
+      "speed": 1
+    },  
+    {
+      "name": "Monster_3.png",
+      "lifeValue": 15,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_3.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },    
+    {
+      "name": "Monster_1.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    }  
+  ],
+  "turrets": [
+    {
+      "name": "TB",
+      "Cost1": 50,
+      "Cost2":100,
+      "Cost3":150,
+      "range":100,
+      "damage":2
+    },
+    {
+      "name": "TB",
+      "Cost1": 50,
+      "Cost2":100,
+      "Cost3":150,
+      "range":100,
+      "damage":2
+    }
+  ],
+  "path": [
+    {
+      "x": 0,
+      "y": 6
+    },
+    {
+      "x": 1,
+      "y": 6
+    },
+    {
+      "x": 2,
+      "y": 6
+    },
+    {
+      "x": 3,
+      "y": 6
+    },
+    {
+      "x": 4,
+      "y": 6
+    },
+    {
+      "x": 5,
+      "y": 6
+    },
+    {
+      "x": 5,
+      "y": 7
+    },
+    {
+      "x": 6,
+      "y": 7
+    },
+    {
+      "x": 7,
+      "y": 7
+    },
+    {
+      "x": 8,
+      "y": 7
+    },
+    {
+      "x": 9,
+      "y": 7
+    },
+    {
+      "x": 9,
+      "y": 6
+    },
+    {
+      "x": 9,
+      "y": 5
+    },
+    {
+      "x": 9,
+      "y": 4
+    },
+    {
+      "x": 9,
+      "y": 3
+    },
+    {
+      "x": 9,
+      "y": 2
+    },
+    {
+      "x": 10,
+      "y": 2
+    },
+    {
+      "x": 11,
+      "y": 2
+    },
+    {
+      "x": 12,
+      "y": 2
+    },
+    {
+      "x": 13,
+      "y": 2
+    },
+    {
+      "x": 14,
+      "y": 2
+    }
+  ]
 }

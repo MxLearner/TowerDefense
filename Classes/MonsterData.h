@@ -10,9 +10,10 @@ USING_NS_CC;
 class MonsterData :public Ref 
 {
 private:
-	std::string _name; // 怪物名称
-	int _lifeValue;    // 怪物生命
-	int _gold;         // 消灭怪物获得的金币
+	std::string _name=""; // 怪物名称,存储图片路径
+	int _lifeValue=1;    // 怪物生命
+	int _gold=10;         // 消灭怪物获得的金币
+	float _speed=1;      //  移动速度 
 
 public:
 	// 创造MonsterData
@@ -49,6 +50,12 @@ public:
 		return _gold;
 	}
 
+	void setSpeed(float speed) {
+		_speed = speed;
+	}
+	float getSpeed() {
+		return _speed;
+	}
 
 
 
