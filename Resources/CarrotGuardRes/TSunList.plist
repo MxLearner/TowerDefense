@@ -4,140 +4,110 @@
     <dict>
         <key>frames</key>
         <dict>
-            <key>CanBuy.png</key>
+            <key>TSun_1.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{-2,0}</string>
                 <key>spriteSize</key>
-                <string>{52,49}</string>
+                <string>{32,34}</string>
                 <key>spriteSourceSize</key>
-                <string>{52,49}</string>
+                <string>{42,40}</string>
                 <key>textureRect</key>
-                <string>{{1,1},{52,49}}</string>
+                <string>{{193,43},{32,34}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>NotBuy.png</key>
-            <dict>
-                <key>aliases</key>
-                <array/>
-                <key>spriteOffset</key>
-                <string>{0,0}</string>
-                <key>spriteSize</key>
-                <string>{52,49}</string>
-                <key>spriteSourceSize</key>
-                <string>{52,49}</string>
-                <key>textureRect</key>
-                <string>{{1,52},{52,49}}</string>
-                <key>textureRotated</key>
-                <false/>
-            </dict>
-            <key>TB_1.png</key>
+            <key>TSun_2.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
                 <string>{0,-1}</string>
                 <key>spriteSize</key>
-                <string>{25,39}</string>
+                <string>{40,38}</string>
                 <key>spriteSourceSize</key>
-                <string>{25,41}</string>
+                <string>{40,42}</string>
                 <key>textureRect</key>
-                <string>{{28,207},{25,39}}</string>
-                <key>textureRotated</key>
-                <false/>
-            </dict>
-            <key>TB_2.png</key>
-            <dict>
-                <key>aliases</key>
-                <array/>
-                <key>spriteOffset</key>
-                <string>{0,0}</string>
-                <key>spriteSize</key>
-                <string>{25,41}</string>
-                <key>spriteSourceSize</key>
-                <string>{25,41}</string>
-                <key>textureRect</key>
-                <string>{{1,207},{25,41}}</string>
-                <key>textureRotated</key>
-                <false/>
-            </dict>
-            <key>TB_3.png</key>
-            <dict>
-                <key>aliases</key>
-                <array/>
-                <key>spriteOffset</key>
-                <string>{0,0}</string>
-                <key>spriteSize</key>
-                <string>{31,49}</string>
-                <key>spriteSourceSize</key>
-                <string>{31,49}</string>
-                <key>textureRect</key>
-                <string>{{1,146},{31,49}}</string>
+                <string>{{193,1},{40,38}}</string>
                 <key>textureRotated</key>
                 <true/>
             </dict>
-            <key>TB_CanBuy.png</key>
+            <key>TSun_3.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{-1,0}</string>
                 <key>spriteSize</key>
-                <string>{52,49}</string>
+                <string>{40,40}</string>
                 <key>spriteSourceSize</key>
-                <string>{52,49}</string>
+                <string>{42,40}</string>
                 <key>textureRect</key>
-                <string>{{1,1},{52,49}}</string>
+                <string>{{167,197},{40,40}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>TB_NotBuy.png</key>
+            <key>TSun_CanBuy.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
                 <string>{0,0}</string>
                 <key>spriteSize</key>
-                <string>{52,49}</string>
+                <string>{52,50}</string>
                 <key>spriteSourceSize</key>
-                <string>{52,49}</string>
+                <string>{52,50}</string>
                 <key>textureRect</key>
-                <string>{{1,52},{52,49}}</string>
+                <string>{{61,197},{52,50}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>TB_base.png</key>
+            <key>TSun_NotBuy.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{0,1}</string>
                 <key>spriteSize</key>
-                <string>{44,41}</string>
+                <string>{50,50}</string>
                 <key>spriteSourceSize</key>
-                <string>{44,41}</string>
+                <string>{50,52}</string>
                 <key>textureRect</key>
-                <string>{{1,103},{44,41}}</string>
+                <string>{{115,197},{50,50}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>TB_bullet.png</key>
+            <key>TSun_base.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
                 <string>{0,0}</string>
                 <key>spriteSize</key>
-                <string>{26,40}</string>
+                <string>{58,53}</string>
                 <key>spriteSourceSize</key>
-                <string>{26,40}</string>
+                <string>{58,53}</string>
                 <key>textureRect</key>
-                <string>{{1,179},{26,40}}</string>
+                <string>{{1,197},{58,53}}</string>
                 <key>textureRotated</key>
-                <true/>
+                <false/>
+            </dict>
+            <key>TSun_bullet.png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{190,194}</string>
+                <key>spriteSourceSize</key>
+                <string>{190,194}</string>
+                <key>textureRect</key>
+                <string>{{1,1},{190,194}}</string>
+                <key>textureRotated</key>
+                <false/>
             </dict>
         </dict>
         <key>metadata</key>
@@ -149,13 +119,13 @@
             <key>premultiplyAlpha</key>
             <false/>
             <key>realTextureFileName</key>
-            <string>TBList.png</string>
+            <string>TSunList.png</string>
             <key>size</key>
-            <string>{54,249}</string>
+            <string>{232,251}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:be0049dd5f0320dd7f758e71100b3fc9:b0f5cc513f2693817b5b6c1ac715d890:dee737659b5afd8c847a0ecdb1eaf234$</string>
+            <string>$TexturePacker:SmartUpdate:f51f27b10f23443375a30a931cae2b9b:66f1f1895ccacf2043b3fae49e7af446:faa3e9e5c5b9af0a183ecc8c7a0eba33$</string>
             <key>textureFileName</key>
-            <string>TBList.png</string>
+            <string>TSunList.png</string>
         </dict>
     </dict>
 </plist>

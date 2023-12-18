@@ -79,6 +79,36 @@
                 <key>textureRotated</key>
                 <true/>
             </dict>
+            <key>TB_CanBuy.png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{52,49}</string>
+                <key>spriteSourceSize</key>
+                <string>{52,49}</string>
+                <key>textureRect</key>
+                <string>{{1,1},{52,49}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>TB_NotBuy.png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{52,49}</string>
+                <key>spriteSourceSize</key>
+                <string>{52,49}</string>
+                <key>textureRect</key>
+                <string>{{1,52},{52,49}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
             <key>TB_base.png</key>
             <dict>
                 <key>aliases</key>
@@ -123,7 +153,7 @@
             <key>size</key>
             <string>{54,249}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:c7d4a9c2575529ef8def16d78788fe8f:9e1a84b249ef006bff4ac1764f2e9a41:dee737659b5afd8c847a0ecdb1eaf234$</string>
+            <string>$TexturePacker:SmartUpdate:be0049dd5f0320dd7f758e71100b3fc9:b0f5cc513f2693817b5b6c1ac715d890:dee737659b5afd8c847a0ecdb1eaf234$</string>
             <key>textureFileName</key>
             <string>TBList.png</string>
         </dict>
