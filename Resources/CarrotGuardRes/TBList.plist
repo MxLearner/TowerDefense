@@ -4,7 +4,7 @@
     <dict>
         <key>frames</key>
         <dict>
-            <key>CanBuy.png</key>
+            <key>TB_CanBuy.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
@@ -19,7 +19,7 @@
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>NotBuy.png</key>
+            <key>TB_NotBuy.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>

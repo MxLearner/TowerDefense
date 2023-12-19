@@ -9,7 +9,7 @@ bool Turret::init()
 	// 创建并发射子弹
 	this->schedule([this](float dt) {
 		ShootBullet();
-		}, 0.5f, "shootBullet");
+		},0.5f, "shootBullet");
 	return true;
 }
 void Turret::ShootAtMonster(Monster* target) {
@@ -41,9 +41,6 @@ void Turret::ShootAtMonster(Monster* target) {
 	 const auto& monsters = layer->getMonsters();
 	 for (const auto& monster : monsters) {
 		 float distance = getPosition().distance(monster->getPosition());
-#ifdef DEBUG
-		 CCLOG("distance=%f", distance);
-#endif // DEBUG
 
 		 // 检测是否在射程内
 		 if (distance <= _range) {
@@ -64,27 +61,28 @@ void Turret::ShootAtMonster(Monster* target) {
 		 return;
 	 }
 	 // 注意monster访问异常，严重bug！！！！！！！！！！！
+	 // 最近没出现了，出现了记得及时记录！！！！！！！！！
 	 //**********************************************
 	 //**********************************************
 	 Vec2 targetPos = _monster->getPosition();
-	 Monster* monster = _monster;
 	 std::string bulletName = getName() + "_bullet.png";
 	 auto bullet = Bullet::createWithSpriteFrameName(bulletName);
+	 bullet->setDamage(_damage);
 	 bullet->setPosition(getPosition());
 	 Vec2 temp = bullet->getPosition();
 	 getParent()->addChild(bullet, 9); // 位置比塔基低一层这样可以盖住
 	 
 	 auto moveTo = MoveTo::create(0.2f, targetPos);
 	 auto damageCallback = CallFunc::create([=]() {
-		 if (monster != nullptr) {
-			 int curLifeValue = monster->getLifeValue() - bullet->getDamage();
-			 monster->setLifeValue(curLifeValue);
-			 
-		 }
+		 if (_monster != nullptr&&_monster->getLifeValue()>0) {
+			 int curLifeValue =_monster->getLifeValue() - bullet->getDamage();
+			 _monster->setLifeValue(curLifeValue);
+		 }});
+		 
+	 auto removeCallback = CallFunc::create([=]() {
+
 		 bullet->removeFromParent();
 		 });
-		 
-	 auto sequence = Sequence::create(moveTo, damageCallback, nullptr);
+	 auto sequence = Sequence::create(damageCallback,moveTo, removeCallback, nullptr);
 	 bullet->runAction(sequence);
-	 
  }
