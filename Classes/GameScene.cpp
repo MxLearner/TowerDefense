@@ -49,6 +49,7 @@ bool GameScene::init()
 	CountDown();
     // 创造鼠标点击时间，用于建塔
 	auto listener = EventListenerMouse::create();
+	//listener->onMouseDown = CC_CALLBACK_1(GameScene::onClicked, this);
 	listener->onMouseDown = CC_CALLBACK_1(GameScene::onMouseDown, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
@@ -178,6 +179,81 @@ void GameScene::onMouseDown(EventMouse* event)
 	// 转化成TMX地图坐标
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
 	// 地图上可以建造时
+
+	switch (isTurretAble[mapX][mapY]) {
+	case 0:
+		TouchLand(event);
+		break;
+	case 2:
+		TouchTower(event);
+		break;
+	default:
+		break;
+	}
+
+	/*if(isTurretAble[mapX][mapY] == 0)
+		TouchLand(event);
+	if (isTurretAble[mapX][mapY] == 2)
+		TouchTower(event);*/
+
+}
+
+void GameScene::TouchLand(EventMouse* event) {
+
+
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+
+	auto touch_layer = Layer::create();
+	this->addChild(touch_layer,1);
+	Sprite* TB = Sprite::create("CarrotGuardRes/Towers/TBottle/CanBuy.png");
+	TB->setName("TB");
+	screenPos = TMXPosToLocation(mapPos);
+	TB->setPosition(screenPos);
+
+	TB->setVisible(true);
+	touch_layer->addChild(TB);
+	auto listener = EventListenerMouse::create();
+	listener->onMouseDown = [this, TB, &screenPos, mapPos, touch_layer](EventMouse* event) {
+		// 若按下位置在第一个炮塔图标内
+
+		Vec2 clickPos = event->getLocation();
+		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+		if (TB->getBoundingBox().containsPoint(screenPos)) {
+			// 点击在第一个炮塔图标的内部
+			BuildTower(event);
+			TB->setVisible(false);
+			removeChildByName("TB");
+		}
+		else {
+			TB->setVisible(false);
+			removeChildByName("TB");
+		}
+	};
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+}
+
+void GameScene::BuildTower(EventMouse* event) {
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+
+
 	if (isTurretAble[mapX][mapY] == 0) {
 		isTurretAble[mapX][mapY] = 2; // 代表上面是炮塔
 		// 先固定建瓶子，回来再改
@@ -191,8 +267,86 @@ void GameScene::onMouseDown(EventMouse* event)
 		turret->init();
 		this->addChild(turret, 10);
 	}
-
 }
+
+void GameScene::TouchTower(EventMouse* event) {
+
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+
+	auto touch_layer = Layer::create();
+	this->addChild(touch_layer, 1);
+	Sprite* circle = Sprite::create("CarrotGuardRes/UI/RangeBackground.png");
+	circle->setName("circle");
+	screenPos = TMXPosToLocation(mapPos);
+	circle->setPosition(screenPos);
+
+	circle->setVisible(true);
+	touch_layer->addChild(circle);
+	auto listener = EventListenerMouse::create();
+	listener->onMouseDown = [this, circle, &screenPos, mapPos, touch_layer](EventMouse* event) {
+		// 若按下位置在第一个炮塔图标内
+
+		Vec2 clickPos = event->getLocation();
+		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+		if (circle->getBoundingBox().containsPoint(screenPos)) {
+			// 点击在第一个炮塔图标的内部
+			//BuildTower(event);
+			circle->setVisible(false);
+			removeChildByName("circle");
+		}
+		else {
+			circle->setVisible(false);
+			removeChildByName("circle");
+		}
+		};
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+
+	/*
+	Sprite* circle = getChildByName<Sprite*>("circle");
+	if (circle) {
+
+		Vec2 circlePos = circle->getPosition();
+		float circleRadius = circle->getContentSize().width * 0.1;
+
+		circle->setVisible(false);
+		removeChildByName("circle");
+
+		if (isTurretAble[mapX][mapY] == 2) {
+			Sprite* circle = Sprite::create("CarrotGuardRes/UI/RangeBackground.png");
+			circle->setName("circle");
+
+			//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
+			screenPos = TMXPosToLocation(mapPos);
+			circle->setPosition(screenPos);
+			this->addChild(circle, 10);
+		}
+
+	}
+	else {
+		if (isTurretAble[mapX][mapY] == 2) {
+			Sprite* circle = Sprite::create("CarrotGuardRes/UI/RangeBackground.png");
+			circle->setName("circle");
+
+			//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
+			screenPos = TMXPosToLocation(mapPos);
+			circle->setPosition(screenPos);
+			this->addChild(circle, 10);
+
+		}
+	}
+	*/
+}
+
+
 
 void GameScene::initLevel()
 {
@@ -256,11 +410,27 @@ void GameScene::TopLabel()
 	_numberLabel->setPosition(_screenWidth * 0.55, _screenHeight * 0.95);
 	this->addChild(_numberLabel,2);
 	// 3. 右上角金币数量
-	_goldLabel = Label::createWithSystemFont(StringUtils::format("gold: %d", _goldValue), "Arial-BoldMT", 32);
-	_goldLabel->setColor(Color3B::BLUE);
-	_goldLabel->setPosition(100, _screenHeight * 0.95);
-	_goldLabel->enableOutline(Color4B::WHITE, 2);
+	_goldLabel = Label::createWithSystemFont(StringUtils::format("%d", _goldValue), "Arial-BoldMT", 32);
+	_goldLabel->setColor(Color3B::WHITE);
+	_goldLabel->setPosition(_screenWidth * 0.125f, _screenHeight * 0.95);
+	//_goldLabel->enableOutline(Color4B::WHITE, 2);
 	this->addChild(_goldLabel,2);
+
+	
+
+
+	//添加游戏界面上部的ui
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+	auto topImage = Sprite::create("CarrotGuardRes/UI/GameTop.png");
+
+	//topImage->setPosition(Vec2(_screenWidth / 2 + origin.x, _screenHeight + origin.y - topImage->getContentSize().height + _screenHeight * 0.01f));
+	topImage->setPosition(Vec2(_screenWidth / 2 + origin.x, _screenHeight + origin.y - _screenHeight * 0.065f));
+	topImage->setScale(_screenWidth / topImage->getContentSize().width);
+	this->addChild(topImage, 1);
+
+
+
 }
 
 
@@ -433,7 +603,7 @@ void GameScene::update(float dt)
 	
 	updateMonster();
 	// 先注释掉
-	//updateGameState();
+	updateGameState();
 }
 
 void GameScene::updateMonster()
@@ -444,6 +614,7 @@ void GameScene::updateMonster()
 		if (monster->getLifeValue() <= 0) {
 			
 			_goldValue += monster->getGold();
+			monster->removeHP();//移除血条
 			monstersToRemove.pushBack(monster);
 			continue;
 		}
@@ -465,7 +636,7 @@ void GameScene::updateMonster()
 void GameScene::updateGameState()
 {
 	// 更新金币标签
-	_goldLabel ->setString(StringUtils::format("gold: %d", _goldValue));
+	_goldLabel ->setString(StringUtils::format("%d", _goldValue));
 	// 判断游戏是否结束：成功或失败
 	//==========待完善============
 	// 失败

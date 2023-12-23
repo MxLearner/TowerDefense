@@ -51,7 +51,7 @@ public:
 		CC_SAFE_DELETE(sprite);
 		return nullptr;
 	}
-	bool init();
+    bool init();
 
 
 	void ShootAtMonster(Monster* target);

@@ -65,8 +65,18 @@ public:
 	
 	// 鼠标点击事件,用于选择创建炮台
 	void onMouseDown(EventMouse* event);
+
+	//点击空地事件
+	void TouchLand(EventMouse* event);
+	//建造塔事件
+	void BuildTower(EventMouse* event);
+	//点击塔的事件
+	void TouchTower(EventMouse* event);
+
+
 	// TMX point ->Screen
     // 地图格子坐标转化成屏幕坐标
+
 	Vec2 TMXPosToLocation(Vec2 pos);
 	// Screen ->TMX point
 	// 屏幕坐标转化成地图格子坐标	

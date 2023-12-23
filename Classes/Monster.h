@@ -29,6 +29,18 @@ public:
 		Monster* sprite = new Monster();
 		if (sprite && sprite->initWithSpriteFrameName(filename)) {
 			sprite->autorelease();
+
+			auto screedSize = Director::getInstance()->getVisibleSize();
+			//添加血条
+			sprite->_HP = LoadingBar::create("CarrotGuardRes/UI/HPbar.png");
+			sprite->_HP->setPercent(100); // 初始血量为满血
+			sprite->_HP->setPosition(Vec2(sprite->getContentSize().width / 2, sprite->getContentSize().height * 1.3f));
+			sprite->addChild(sprite->_HP, 1);
+			//添加血条背景
+			auto HPBackground = Sprite::create("CarrotGuardRes/UI/HPBackground.png");
+			HPBackground->setPosition(Vec2(sprite->getContentSize().width / 2, sprite->getContentSize().height * 1.3f));
+			sprite->addChild(HPBackground, 0);
+
 			return sprite;
 		}
 		CC_SAFE_DELETE(sprite);
@@ -44,9 +56,20 @@ public:
 		return _lifeValue;
 	}
 
-	void setHP(LoadingBar* HP) {
-		_HP = HP;
+	void setHP(int lifeValue) {
+		if (lifeValue > 0) {
+			float percent = static_cast<float>(_lifeValue) / 10.0f * 100.0f;
+			_HP->setPercent(percent);
+		}
 	}
+
+	void removeHP() {
+		if (_HP) {
+			_HP->removeFromParent();
+			_HP = nullptr;
+		}
+	}
+
 	LoadingBar* getHP() {
 		return _HP;
 	}

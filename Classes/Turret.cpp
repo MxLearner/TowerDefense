@@ -41,9 +41,6 @@ void Turret::ShootAtMonster(Monster* target) {
 	 const auto& monsters = layer->getMonsters();
 	 for (const auto& monster : monsters) {
 		 float distance = getPosition().distance(monster->getPosition());
-#ifdef DEBUG
-		 CCLOG("distance=%f", distance);
-#endif // DEBUG
 
 		 // 检测是否在射程内
 		 if (distance <= _range) {
@@ -79,11 +76,12 @@ void Turret::ShootAtMonster(Monster* target) {
 		 if (monster != nullptr) {
 			 int curLifeValue = monster->getLifeValue() - bullet->getDamage();
 			 monster->setLifeValue(curLifeValue);
-			 
+	         monster->setHP(curLifeValue);//更新血条
+
 		 }
 		 bullet->removeFromParent();
 		 });
-		 
+
 	 auto sequence = Sequence::create(moveTo, damageCallback, nullptr);
 	 bullet->runAction(sequence);
 	 
