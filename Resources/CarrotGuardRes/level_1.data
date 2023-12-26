@@ -101,18 +101,26 @@
     {
       "name": "TB",
       "Cost1": 50,
-      "Cost2":100,
-      "Cost3":150,
-      "range":100,
-      "damage":2
+      "Cost2": 100,
+      "Cost3": 150,
+      "range": 100,
+      "damage": 1
     },
     {
-      "name": "TB",
+      "name": "TSun",
       "Cost1": 50,
-      "Cost2":100,
-      "Cost3":150,
-      "range":100,
-      "damage":2
+      "Cost2": 100,
+      "Cost3": 150,
+      "range": 100,
+      "damage": 5
+    },
+    {
+      "name": "TFan",
+      "Cost1": 50,
+      "Cost2": 100,
+      "Cost3": 150,
+      "range": 100,
+      "damage": 2
     }
   ],
   "path": [

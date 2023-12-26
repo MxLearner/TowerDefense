@@ -11,6 +11,7 @@
 #include"TurretData.h"
 #include"MonsterData.h"
 #include"json/document.h"
+
 USING_NS_CC;
 
 // 游戏逻辑
@@ -22,7 +23,7 @@ protected:
 
 	// 初始化参数
 	int _currNum=1;            // 当前怪物波数
-	int _goldValue=200;          // 玩家当前金币数量
+	int _goldValue=2000;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
 
@@ -47,6 +48,14 @@ protected:
 	Label* _numberLabel;                  // 显示怪物波数
 	Label* _curNumberLabel;               // 显示当前怪物波数
 	Label* _goldLabel;                    // 显示当前玩家金币
+
+	//游戏内功能实现需要
+	EventMouse* buildEvent;           //记录防御塔建造位置的点击事件
+	int hasBuild = 0;                 //记录是否已经调出建造界面
+	int hasUpgrade = 0;               //记录是否已经调出升级出售界面
+	Layer* touchLayer;
+	EventListenerMouse* touchListener;
+
 public:
 
 	// 根据关卡编号创建游戏关卡场景
@@ -68,9 +77,14 @@ public:
 
 	//点击空地事件
 	void TouchLand(EventMouse* event);
+	//建造塔事件
+	void BuildTower(EventMouse* event, int numTower);
 	//点击塔的事件
 	void TouchTower(EventMouse* event);
-
+	//升级塔的事件
+	void UpgradeTower(EventMouse* event);
+	//出售塔的事件
+	void SaleTower(EventMouse* event);
 
 	// TMX point ->Screen
     // 地图格子坐标转化成屏幕坐标
@@ -104,6 +118,65 @@ public:
 	void updateMonster();
 	// 更新游戏状态，更新当前玩家金币标签，判断游戏是否结束：成功或失败
 	void updateGameState();
+
+	void setBuildEvent(EventMouse* event) {
+		buildEvent = event;
+	}
+
+	EventMouse* getBuildEvent() {
+		return buildEvent;
+	}
+
+	void setHasBuild(int b) {
+		hasBuild = b;
+	}
+
+	int getHasBuild() {
+		return hasBuild;
+	}
+
+	void setHasUpgrade(int b) {
+		hasUpgrade = b;
+	}
+
+	int getHasUpgrade() {
+		return hasUpgrade;
+	}
+
+
+	void createTouchLayer() {
+		touchLayer = Layer::create();
+	}
+
+	void removeTouchLayer() {
+		touchLayer = NULL;
+	}
+
+	void setTouchLayer(Layer* ptr) {
+		touchLayer = ptr;
+	}
+
+	Layer* getTouchLayer() {
+		return touchLayer;
+	}
+
+	void createTouchListener() {
+		touchListener = EventListenerMouse::create();
+	}
+
+	void removeTouchListener() {
+		touchListener = NULL;
+	}
+
+	void setTouchListener(EventListenerMouse* ptr) {
+		touchListener = ptr;
+	}
+
+	EventListenerMouse* getTouchListener() {
+		return touchListener;
+	}
+
+
 
 	CREATE_FUNC(GameScene);
 };

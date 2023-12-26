@@ -2,6 +2,9 @@
 
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
+#include"Turret_TB.h"
+#include"Turret_TFan.h"
+#include"Turret_TSun.h"
 
 
 
@@ -55,6 +58,16 @@ bool GameScene::init()
 
 	// 生成怪物
 	generateMonsters();
+	
+	//初始化建造塔和升级塔的点击事件
+	setBuildEvent(NULL);		
+	setHasBuild(0);
+	setHasUpgrade(0);
+	createTouchLayer();
+	setTouchLayer(NULL);
+	createTouchListener();
+	setTouchListener(NULL);
+
 	return true;
 }
 void GameScene::LoadLevelData()
@@ -178,17 +191,28 @@ void GameScene::onMouseDown(EventMouse* event)
 	Vec2 mapPos = LocationToTMXPos(screenPos);
 	// 转化成TMX地图坐标
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+
+	//获取当前建造界面是否激活
+	int b = getHasBuild();
+	//获取当前升级界面是否激活
+	int u = getHasUpgrade();
+
 	// 地图上可以建造时
-
-
-	if(isTurretAble[mapX][mapY] == 0)
-		TouchLand(event);
-	if (isTurretAble[mapX][mapY] == 2)
-		TouchTower(event);
+	if (isTurretAble[mapX][mapY] == 0) {
+		if (!u)//这样防止在升级塔的时候误触旁边的空地
+			TouchLand(event);
+	}
+	else if (isTurretAble[mapX][mapY] != 0 && isTurretAble[mapX][mapY] != 1) {
+		if(!b)//这样防止在建造塔的时候误触旁边的塔
+			TouchTower(event);
+	}
+	
 
 }
 
-void GameScene::TouchLand(EventMouse* event) {
+void GameScene::TouchLand(EventMouse* event) {//***************建两个塔，先点左边再点右边，再点右边的空地，不要见他，再点右边的空地，会出现touchlayer空(最近没有发现
+
+
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -201,51 +225,421 @@ void GameScene::TouchLand(EventMouse* event) {
 	// 地图上可以建造时
 
 
-	Sprite* TB = Sprite::create("CarrotGuardRes/Towers/TBottle/CanBuy.png");
-	TB->setName("TB");
+	//获取当前建造界面是否激活
+	int b = getHasBuild();
+
+	//如果没有激活建造界面
+	if (!b) {
+		//创建新的触摸层和监听器
+		createTouchLayer();
+		createTouchListener();
+	}
+	//获取新的触摸层和监听器
+	auto touch_layer = getTouchLayer();
+	auto touch_listener = getTouchListener();
+	
+	//将新的触摸层添加到场景当中
+	if(!b)
+	this->addChild(touch_layer,10);
+
+
+	//创建建造图标精灵
+	Sprite* TB_Can = Sprite::create("CarrotGuardRes/Towers/TBottle/CanBuy.png");
+	Sprite* TFan_Can = Sprite::create("CarrotGuardRes/Towers/TFan/TFan_CanBuy.png");
+	Sprite* TSun_Can = Sprite::create("CarrotGuardRes/Towers/TSun/TSun_CanBuy.png");
+	Sprite* TB_Not = Sprite::create("CarrotGuardRes/Towers/TBottle/NotBuy.png");
+	Sprite* TFan_Not = Sprite::create("CarrotGuardRes/Towers/TFan/TFan_NotBuy.png");
+	Sprite* TSun_Not = Sprite::create("CarrotGuardRes/Towers/TSun/TSun_NotBuy.png");
+	
+	//定义三种防御塔的建造成本
+	int TB_Cost,  TFan_Cost,  TSun_Cost;
+
+	if (!b) {
+		//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
+		screenPos = TMXPosToLocation(mapPos);
+		//定义在迭代器中的计数标签
+		int count = 1;
+		//遍历获得每一个防御塔的建造成本
+		for (const auto& turretData : _turretDatas) {
+			switch (count) {
+			case 1:
+				TB_Cost = turretData->getCost1();
+				break;
+			case 2:
+				TFan_Cost = turretData->getCost1();
+				break;
+			case 3:
+				TSun_Cost = turretData->getCost1();
+				break;
+			default:
+				break;
+			}
+			count++;
+		}
+		
+		//根据当前的金币情况来设置建造防御塔的图标
+		if (_goldValue >= TB_Cost) {//******************时不时会说没有初始化内存
+			TB_Can->setPosition(screenPos.x - _screenWidth * 0.05, screenPos.y);
+			TB_Can->setVisible(true);
+			touch_layer->addChild(TB_Can);
+			TB_Can->setName("TB_Can");
+		}
+		else {
+			TB_Not->setPosition(screenPos.x - _screenWidth * 0.05, screenPos.y);
+			TB_Not->setVisible(true);
+			touch_layer->addChild(TB_Not);
+			TB_Not->setName("TB_Not");
+		}
+		if (_goldValue >= TFan_Cost) {
+			TFan_Can->setPosition(screenPos.x, screenPos.y);
+			TFan_Can->setVisible(true);
+			touch_layer->addChild(TFan_Can);
+			TFan_Can->setName("TFan_Can");
+		}
+		else {
+			TFan_Not->setPosition(screenPos.x, screenPos.y);
+			TFan_Not->setVisible(true);
+			touch_layer->addChild(TFan_Not);
+			TFan_Not->setName("TFan_Not");
+		}
+		if (_goldValue >= TFan_Cost) {
+			TSun_Can->setPosition(screenPos.x + _screenWidth * 0.06, screenPos.y);
+			TSun_Can->setVisible(true);
+			touch_layer->addChild(TSun_Can);
+			TSun_Can->setName("TSun_Can");
+		}
+		else {
+			TSun_Not->setPosition(screenPos.x + _screenWidth * 0.05, screenPos.y);
+			TSun_Not->setVisible(true);
+			touch_layer->addChild(TSun_Not);
+			TSun_Not->setName("TSun_Not");
+		}
+
+	}
+
+	//定义防御塔最终显示图标的精灵
+	Sprite* TB, * TFan, * TSun;
+	//通过name获取“可以建造”的图标，如果不能获取，则说明"不可建造”
+	TB = (Sprite*)touch_layer->getChildByName("TB_Can");
+	TFan = (Sprite*)touch_layer->getChildByName("TFan_Can");
+	TSun = (Sprite*)touch_layer->getChildByName("TSun_Can");
+
+	//记录当前点击事件，可以用于后续获得防御塔建造的位置
+	if (!b) {
+		EventMouse* temp = new EventMouse(*event);
+		setBuildEvent(temp);
+	}
+	//更新建造状态，说明当前已激活建造界面
+	setHasBuild(1);
+	//获取防御塔建造位置对应的点击事件
+	EventMouse* buildTower = getBuildEvent();
+	//当点击鼠标触发的点击事件
+	touch_listener->onMouseDown = [this, TB, TFan, TSun, &screenPos, mapPos, touch_layer, touch_listener, buildTower](EventMouse* event) {
+
+		//记录点击的坐标
+		Vec2 clickPos = event->getLocation();
+		//将点击的坐标转化为UI坐标
+		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+
+		//在这里TB指代“可以建造图标”如果不存在，就说明不可以建造，为假。如果存在，且点击到该图标的范围内则为真。
+		if ((TB)&&TB->getBoundingBox().containsPoint(screenPos)) {
+			//建造对应的防御塔
+			BuildTower(buildTower, 1);
+			//移除最后设置的lisenner，防止多个lisenner相互干扰
+			_eventDispatcher->removeEventListener(touch_listener);
+			//从场景中移除触摸层
+			this->removeChild(touch_layer);
+			//彻底移除触摸层
+			removeTouchLayer();
+			//移除触摸监听器
+			removeTouchListener();
+		}
+		else if ((TSun)&&TSun->getBoundingBox().containsPoint(screenPos)) {
+			BuildTower(buildTower, 2);
+			_eventDispatcher->removeEventListener(touch_listener);
+			this->removeChild(touch_layer);
+			removeTouchLayer();
+			removeTouchListener();
+		}
+		else if ((TFan)&&TFan->getBoundingBox().containsPoint(screenPos)) {
+			BuildTower(buildTower, 3);
+			_eventDispatcher->removeEventListener(touch_listener);
+			this->removeChild(touch_layer);
+			removeTouchLayer();
+			removeTouchListener();
+		}
+		//如果点击到三个“可以建造”图标之外的地方，则销毁建造界面
+		else  {
+			_eventDispatcher->removeEventListener(touch_listener);
+			this->removeChild(touch_layer);
+			removeTouchLayer();
+			removeTouchListener();
+		}
+		//表示建造界面已销毁
+		setHasBuild(0);
+	};
+	if(!b)
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(touch_listener, this);
+	
+}
+
+void GameScene::BuildTower(EventMouse* event, int numTower) {
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+
+	//建造需要的金币
+	int buildCost{};
+
+	if (isTurretAble[mapX][mapY] == 0) {
+		// 代表当前位置上是炮塔
+		isTurretAble[mapX][mapY] = 1 + numTower * 10; 
+
+		//遍历获得当前炮塔种类的name
+		auto turretData = *(_turretDatas.begin());
+		std::string name;
+		int count = 1;
+		for (const auto& turretData : _turretDatas) {
+			if (count >= numTower) {
+				name = (turretData->getName());
+				buildCost= (turretData->getCost1());
+				break;
+			}
+			count++;
+		}
+
+
+		Turret* turret;
+		if (numTower != 2)
+			turret = Turret::createWithSpriteFrameName(name, 1);
+		else
+			turret = Turret_TSun::createWithSpriteFrameName(name, 1);
+		_goldValue -= buildCost;//****************************************************时不时说没有初始化内存
+		//update(0);//不知道update的参数有没有用
+		turret->setCost1(turretData->getCost1());
+		turret->setCost2(turretData->getCost2());
+		turret->setCost3(turretData->getCost3());
+		turret->setDamage(turretData->getDamage());
+		turret->setRange(turretData->getRange());
+
+		_currentTurrets.pushBack(turret);
+		turret->setName(name);
+		screenPos = TMXPosToLocation(mapPos);
+		turret->setPosition(screenPos);
+		turret->setTag(mapX * 1000 + mapY);
+		turret->init();
+		this->addChild(turret, 10);
+	}
+}
+
+void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成三个塔，第三个塔升级的时候会出bug，哪份distance是空的（应该是怪刚刚死的时候点升级
+
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+
+	//获取当前升级事件是否激活
+	int u = getHasUpgrade();
+
+	if (!u) {
+		//创建新的触摸层和触摸监听器
+		createTouchLayer();
+		createTouchListener();
+	}
+	auto touch_layer = getTouchLayer();
+	auto touch_listener = getTouchListener();
+
+	if (!u)
+		this->addChild(touch_layer, 10);
+
+	//添加关于升级出售的精灵
+	Sprite* circle = Sprite::create("CarrotGuardRes/UI/RangeBackground.png");
+	Sprite* upgrade_can = Sprite::create("CarrotGuardRes/Towers/upgrade_able.png");
+	Sprite* upgrade_not = Sprite::create("CarrotGuardRes/Towers/upgrade_unable.png");
+	Sprite* upgrade_max = Sprite::create("CarrotGuardRes/Towers/upgrade_top.png");
+	Sprite* sale = Sprite::create("CarrotGuardRes/Towers/sale.png");
+
+	//获得当前准备升级出售的塔的相关信息
+	Turret* currentTower;
+	float currentRange;
+	int currentGrade, currentCost;//*************************思考下扣钱放在点击塔还是升级塔里面
+
+	//currentGrade = 3;
+	std::string currentName;
+	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
+	currentRange = currentTower->getRange();
+	currentName = currentTower->getName();
+	CCLOG("currentname: %s", currentName.c_str());//******************************************log里测试
+	currentGrade = isTurretAble[mapX][mapY] % 10;
+
+	switch (currentGrade) {
+	case 1:
+		currentCost = currentTower->getCost2();
+		break;
+	case 2:
+		currentCost = currentTower->getCost3();
+		break;
+	default :
+		currentCost = -1;
+		break;
+	}
+
+
+	if (!u) {
+		screenPos = TMXPosToLocation(mapPos);
+		circle->setVisible(true);
+		circle->setPosition(screenPos);
+		circle->setScale(2 * currentRange / circle->getContentSize().width);
+		circle->setName("circle");
+		touch_layer->addChild(circle);
+
+		if (currentGrade < 3) {
+			if (_goldValue >= currentCost) {
+				upgrade_can->setVisible(true);
+				upgrade_can->setPosition(screenPos.x + _screenWidth * 0.004, screenPos.y + _screenHeight * 0.1);
+				upgrade_can->setName("upgrade_can");
+				touch_layer->addChild(upgrade_can);
+			}
+			else {
+				upgrade_not->setVisible(true);
+				upgrade_not->setPosition(screenPos.x + _screenWidth * 0.004, screenPos.y + _screenHeight * 0.1);
+				upgrade_not->setName("upgrade_not");
+				touch_layer->addChild(upgrade_not);
+			}
+		}
+		else {
+			upgrade_max->setVisible(true);
+			upgrade_max->setPosition(screenPos.x + _screenWidth * 0.004, screenPos.y + _screenHeight * 0.1);
+			upgrade_max->setName("upgrade_max");
+			touch_layer->addChild(upgrade_max);
+		}
+
+		sale->setVisible(true);
+		sale->setPosition(screenPos.x + _screenWidth * 0.004, screenPos.y - _screenHeight * 0.1);
+		sale->setName("sale");
+		touch_layer->addChild(sale);
+	}
+
+
+	Sprite* Circle, * UpgradeCan, * Sale;
+	Circle= (Sprite*)touch_layer->getChildByName("circle");
+	UpgradeCan = (Sprite*)touch_layer->getChildByName("upgrade_can");
+	Sale = (Sprite*)touch_layer->getChildByName("sale");
+
+	if (!u) {
+		EventMouse* temp = new EventMouse(*event);
+		setBuildEvent(temp);
+	}
+	setHasUpgrade(1);
+	EventMouse* buildTower = getBuildEvent();
+	touch_listener->onMouseDown = [this, Circle,UpgradeCan,Sale,&screenPos, mapPos, touch_layer, touch_listener, buildTower,currentCost](EventMouse* event) {
+		// 若按下位置在第一个炮塔图标内
+
+		Vec2 clickPos = event->getLocation();
+		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+		
+		if ((UpgradeCan) && UpgradeCan->getBoundingBox().containsPoint(screenPos)) {//短路求值来判断是否为可以点击按钮
+			_eventDispatcher->removeEventListener(touch_listener);
+			UpgradeTower(buildTower);
+			_goldValue -= currentCost ;
+			//update(0);
+			this->removeChild(touch_layer);
+			removeTouchLayer();
+			removeTouchListener();
+		}
+		else if ((Sale) && Sale->getBoundingBox().containsPoint(screenPos)) {
+			_eventDispatcher->removeEventListener(touch_listener);
+			SaleTower(buildTower);
+			this->removeChild(touch_layer);
+			removeTouchLayer();
+			removeTouchListener();
+		}
+		else {
+			_eventDispatcher->removeEventListener(touch_listener);//TB消除后移除lisenner，防止多个lisenner存在造成bug
+			this->removeChild(touch_layer);
+			removeTouchLayer();
+			removeTouchListener();
+		}
+		setHasUpgrade(0);
+		};
+	if (!u)
+		_eventDispatcher->addEventListenerWithSceneGraphPriority(touch_listener, this);
+
+}
+
+void GameScene::UpgradeTower(EventMouse* event) {
+	// 获取鼠标点击的坐标
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+
+	// 移除名为"frame_name"的精灵帧
+	//cocos2d::SpriteFrameCache::getInstance()->removeSpriteFrameByName("TB");//******************暂时没用好像
+
+
+	Turret* currentTower;
+	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
+	int currentGrade, currentBase;
+	currentGrade = isTurretAble[mapX][mapY] % 10;
+	currentBase = isTurretAble[mapX][mapY] / 10;
+	
+	auto turretData = *(_turretDatas.begin());
+	std::string name;
+	int count = 1;
+	for (const auto& turretData : _turretDatas) {
+		if (count >= currentBase ) {
+			name = (turretData->getName());
+			break;
+		}
+		count++;
+	}
+	Turret* turret;
+	if(currentBase!=2)
+		turret = Turret::createWithSpriteFrameName(name, currentGrade + 1);
+	else
+		turret = Turret_TSun::createWithSpriteFrameName(name, currentGrade + 1);
+	isTurretAble[mapX][mapY] += 1;
+	turret->setCost1(turretData->getCost1());
+	turret->setCost2(turretData->getCost2());
+	turret->setCost3(turretData->getCost3());
+	turret->setDamage(turretData->getDamage());
+	turret->setRange(turretData->getRange());
+
+	_currentTurrets.pushBack(turret);
+	turret->setName(name);
+	//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
 	screenPos = TMXPosToLocation(mapPos);
-	TB->setPosition(screenPos);
-	this->addChild(TB,11);
+	turret->setPosition(screenPos);
+	turret->setTag(mapX * 1000 + mapY);
+	turret->init();
+	this->addChild(turret, 10);
 
 
-	auto listener = EventListenerMouse::create();
-listener->onMouseDown = [this, TB, &screenPos, &mapPos](EventMouse* event) {
-    // 若按下位置在第一个炮塔图标内
-    Vec2 touchPos = event->getLocationInView();
-    touchPos = Director::getInstance()->convertToGL(touchPos);
-    if (1) {
-        std::string name = (*(_turretDatas.begin()))->getName();
-        auto turret = Turret::createWithSpriteFrameName(name);
-        _currentTurrets.pushBack(turret);
-        turret->setName(name);
-        // 由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
-        screenPos = TMXPosToLocation(mapPos);
-        turret->setPosition(screenPos);
-        turret->init();
-        this->addChild(turret, 10);
-    }
-};
+	this->removeChildByTag(mapX * 1000 + mapY);
+	delete currentTower;//*********************************************不知道这种有没有删除
 
-_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
-
-	//if (isTurretAble[mapX][mapY] == 0) {
-	//	isTurretAble[mapX][mapY] = 2; // 代表上面是炮塔
-	//	// 先固定建瓶子，回来再改
-	//	std::string name = (*(_turretDatas.begin()))->getName();
-	//	auto turret = Turret::createWithSpriteFrameName(name);
-	//	_currentTurrets.pushBack(turret);
-	//	turret->setName(name);
-	//	//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
-	//	screenPos = TMXPosToLocation(mapPos);
-	//	turret->setPosition(screenPos);
-	//	turret->init();
-	//	this->addChild(turret, 10);
-	//}
 }
 
-
-void GameScene::TouchTower(EventMouse* event) {
-
+void GameScene::SaleTower(EventMouse* event) {
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -257,41 +651,17 @@ void GameScene::TouchTower(EventMouse* event) {
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
 	// 地图上可以建造时
 
+	Turret* currentTower;
+	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
+	int currentValue;
+	currentValue = currentTower->getCost1();//************************************没找到出售金币，先拿建造的一半来顶替
+	_goldValue += currentValue/2;
+	//update(0);
 
-	Sprite* circle = getChildByName<Sprite*>("circle");
-	if (circle) {
-
-		Vec2 circlePos = circle->getPosition();
-		float circleRadius = circle->getContentSize().width * 0.1;
-
-		circle->setVisible(false);
-		removeChildByName("circle");
-
-		if (isTurretAble[mapX][mapY] == 2) {
-			Sprite* circle = Sprite::create("CarrotGuardRes/UI/RangeBackground.png");
-			circle->setName("circle");
-
-			//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
-			screenPos = TMXPosToLocation(mapPos);
-			circle->setPosition(screenPos);
-			this->addChild(circle, 10);
-		}
-
-	}
-	else {
-		if (isTurretAble[mapX][mapY] == 2) {
-			Sprite* circle = Sprite::create("CarrotGuardRes/UI/RangeBackground.png");
-			circle->setName("circle");
-
-			//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
-			screenPos = TMXPosToLocation(mapPos);
-			circle->setPosition(screenPos);
-			this->addChild(circle, 10);
-
-		}
-	}
+	isTurretAble[mapX][mapY] = 0;
+	this->removeChildByTag(mapX * 1000 + mapY);
+	delete currentTower;
 }
-
 
 
 void GameScene::initLevel()
@@ -299,8 +669,12 @@ void GameScene::initLevel()
 	// 加载精灵帧，塔与子弹，怪物，萝卜  =========后续应改为针对关卡数据加载
 	auto spriteFrameCache = SpriteFrameCache::getInstance();
 	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TBList.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TFList.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TSunList.plist");
 	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Monsters.plist");
 	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Carrots.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Health.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/BaseFunc.plist");
 
 
 
@@ -557,6 +931,7 @@ void GameScene::updateMonster()
 	Vector<Monster*> monstersToRemove;
 	for (auto monster : _currentMonsters) {
 		// 判断怪物是否被消灭,增加金币
+		monster->setHP(monster->getLifeValue());//更新血条
 		if (monster->getLifeValue() <= 0) {
 			
 			_goldValue += monster->getGold();
