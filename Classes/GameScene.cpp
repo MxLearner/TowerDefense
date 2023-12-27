@@ -739,18 +739,74 @@ void GameScene::TopLabel()
 	
 
 
-	//添加游戏界面上部的ui
+	//添加游戏界面上部的ui（在地图数据那里改了下不能点击
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	auto topImage = Sprite::create("CarrotGuardRes/UI/GameTop.png");
+	/*
+	auto speedButton = ui::Button::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
 
-	//topImage->setPosition(Vec2(_screenWidth / 2 + origin.x, _screenHeight + origin.y - topImage->getContentSize().height + _screenHeight * 0.01f));
+	speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x+_screenWidth*0.3, _screenHeight + origin.y - _screenHeight * 0.055f));
+	//speedButton->addClickEventListener(CC_CALLBACK_1(GameScene::onSpeedButton, this));
+	float gameSpeed = getGameSpeed();
+	speedButton->addClickEventListener([this,speedButton,gameSpeed](cocos2d::Ref* sender) {
+		if (gameSpeed == 1.0) {
+			// 当前为正常速度，切换到二倍速
+			float deltaTime = 2 * gameSpeed;
+			setGameSpeed(2.0);
+			speedButton->loadTextures("CarrotGuardRes/UI/doubleSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
+		}
+		else {
+			// 当前为二倍速，切换到正常速度
+			setGameSpeed(1.0);
+			speedButton->loadTextures("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png");
+		}
+		});
+		*/
+
+
 	topImage->setPosition(Vec2(_screenWidth / 2 + origin.x, _screenHeight + origin.y - _screenHeight * 0.065f));
 	topImage->setScale(_screenWidth / topImage->getContentSize().width);
+	topImage->setOpacity(255);
 	this->addChild(topImage, 1);
 
 
+	auto menu = Menu::create();
+	menu->setPosition(Vec2::ZERO);
+	this->addChild(menu, 1);
 
+	auto speedButton = MenuItemImage::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png", CC_CALLBACK_1(GameScene::onSpeedButton, this));
+	if (speedButton != nullptr){
+		speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.3, _screenHeight + origin.y - _screenHeight * 0.055f));
+		menu->addChild(speedButton);
+	}
+
+
+}
+
+
+void GameScene::onSpeedButton(Ref* sender)//*************************看看能不能体内实现
+{
+	float gameSpeed = getGameSpeed();
+
+	if (gameSpeed==1.0) {
+		//二倍速
+		setGameSpeed(2.0);
+	}
+	else {
+		//一倍速
+		setGameSpeed(1.0);
+	}
+	//切换图片
+	MenuItemImage* button = static_cast<MenuItemImage*>(sender);
+	if (gameSpeed==2.0) {
+		button->setNormalImage(Sprite::create("CarrotGuardRes/UI/doubleSpeed.png"));
+		button->setSelectedImage(Sprite::create("CarrotGuardRes/UI/doubleSpeed.png"));
+	}
+	if (gameSpeed == 1.0) {
+		button->setNormalImage(Sprite::create("CarrotGuardRes/UI/normalSpeed.png"));
+		button->setSelectedImage(Sprite::create("CarrotGuardRes/UI/normalSpeed.png"));
+	}
 }
 
 
@@ -931,7 +987,6 @@ void GameScene::updateMonster()
 	Vector<Monster*> monstersToRemove;
 	for (auto monster : _currentMonsters) {
 		// 判断怪物是否被消灭,增加金币
-		monster->setHP(monster->getLifeValue());//更新血条
 		if (monster->getLifeValue() <= 0) {
 			
 			_goldValue += monster->getGold();

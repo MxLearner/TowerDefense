@@ -76,7 +76,9 @@ void Turret::ShootAtMonster(Monster* target) {
 	 auto damageCallback = CallFunc::create([=]() {
 		 if (_monster != nullptr&&_monster->getLifeValue()>0) {
 			 int curLifeValue =_monster->getLifeValue() - bullet->getDamage();
+			 _monster->setHPInterval((float)(_monster->getLifeValue() - curLifeValue));
 			 _monster->setLifeValue(curLifeValue);
+			 _monster->setHP();
 		 }});
 		 
 	 auto removeCallback = CallFunc::create([=]() {

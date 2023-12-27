@@ -26,6 +26,7 @@ protected:
 	int _goldValue=2000;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
+	float gameSpeed = 1.0;
 
 	// 从json中读取
 	std::string _tileFile;   // 关卡地图名称，文件路径
@@ -68,6 +69,8 @@ public:
 	void initLevel();
 	// 屏幕顶部标签
 	void TopLabel();
+	//加速按钮回调事件
+	void onSpeedButton(Ref* sender);
 
 	// 开始时倒计时，也可用于暂停后重新开始
 	void CountDown();
@@ -176,6 +179,13 @@ public:
 		return touchListener;
 	}
 
+	void setGameSpeed(float speed) {
+		gameSpeed = speed;
+	}
+
+	float getGameSpeed() {
+		return gameSpeed;
+	}
 
 
 	CREATE_FUNC(GameScene);

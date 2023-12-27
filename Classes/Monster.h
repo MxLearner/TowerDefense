@@ -56,11 +56,9 @@ public:
 		return _lifeValue;
 	}
 
-	void setHP(int lifeValue) {
-		if (lifeValue > 0) {
-			float percent = static_cast<float>(_lifeValue) / 10.0f * 100.0f;
-			_HP->setPercent(percent);
-		}
+	void setHP() {
+		float percent = static_cast<float>(_lifeValue-_HPInterval) / _lifeValue * 100.0f;
+		_HP->setPercent(percent);
 	}
 
 	void removeHP() {
@@ -80,6 +78,7 @@ public:
 	float getHPInterval() {
 		return _HPInterval;
 	}
+
 
 	void setPointPath(Vector<PointDelegate*> &pathPoints) {
 		_pathPoints = pathPoints;

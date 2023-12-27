@@ -47,7 +47,10 @@ void Turret_TSun::ShootBullet()
 
 			// 检测是否在射程内
 			if (distance <= _range) {
+				int curLifeValue = monster->getLifeValue() - _damage;
+				monster->setHPInterval((float)(monster->getLifeValue() - curLifeValue));
 				monster->setLifeValue(monster->getLifeValue() - _damage);
+				monster->setHP();
 			}
 		}
 		bullet->removeFromParent();
