@@ -2,6 +2,9 @@
 
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
+#include"Turret_TB.h"
+#include"Turret_TFan.h"
+#include"Turret_TSun.h"
 
 
 
@@ -257,8 +260,15 @@ void GameScene::BuildTower(EventMouse* event) {
 	if (isTurretAble[mapX][mapY] == 0) {
 		isTurretAble[mapX][mapY] = 2; // 代表上面是炮塔
 		// 先固定建瓶子，回来再改
-		std::string name = (*(_turretDatas.begin()))->getName();
-		auto turret = Turret::createWithSpriteFrameName(name);
+		auto turretData = *(_turretDatas.begin());
+		std::string name = (turretData->getName());
+		auto turret = Turret_TSun::createWithSpriteFrameName(name);
+		turret->setCost1(turretData->getCost1());
+		turret->setCost2(turretData->getCost2());
+		turret->setCost3(turretData->getCost3());
+		turret->setDamage(turretData->getDamage());
+		turret->setRange(turretData->getRange());
+
 		_currentTurrets.pushBack(turret);
 		turret->setName(name);
 		//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
@@ -353,8 +363,12 @@ void GameScene::initLevel()
 	// 加载精灵帧，塔与子弹，怪物，萝卜  =========后续应改为针对关卡数据加载
 	auto spriteFrameCache = SpriteFrameCache::getInstance();
 	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TBList.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TFList.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/TSunList.plist");
 	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Monsters.plist");
 	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Carrots.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/Health.plist");
+	spriteFrameCache->addSpriteFramesWithFile("CarrotGuardRes/BaseFunc.plist");
 
 
 
