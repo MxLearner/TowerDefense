@@ -7,6 +7,7 @@
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
 
+#define IS_LOAD_SAVE_GAME 1
 
 
 using namespace ui;
@@ -46,10 +47,19 @@ bool GameScene::init()
 	LoadLevelData();
 	// 进行关卡初始化
 	initLevel();
+	// 读取存档
+	if (IS_LOAD_SAVE_GAME) {
+		LoadSaveGame();
+	}
 	// 设置屏幕数据
 	TopLabel();
 	// 开始游戏时，倒计时
 	CountDown();
+	// 加载存档
+	if (IS_LOAD_SAVE_GAME) {
+		initSaveGame();
+	}
+
 	// 创造鼠标点击时间，用于建塔
 	auto listener = EventListenerMouse::create();
 	//listener->onMouseDown = CC_CALLBACK_1(GameScene::onClicked, this);
@@ -681,6 +691,7 @@ void GameScene::initLevel()
 
 
 void GameScene::TopLabel()
+
 {
 	// 注意屏幕数据的父节点应该是scece ，而不是瓦片地图，因为瓦片地图进行了缩放，
 	// 如果是瓦片地图的子节点基于屏幕的setposition 会进行缩放，被挤出屏幕！！！！
@@ -966,7 +977,7 @@ void GameScene::SaveGame()
 		monsterNameValue.SetString(monsterName.c_str(), monsterName.length(), document.GetAllocator());
 		monsterObject.AddMember("name", monsterNameValue, document.GetAllocator());
 		monsterObject.AddMember("lifeValue", monster->getLifeValue(), document.GetAllocator());
-		monsterObject.AddMember("MaxLiveValue", monster->getMaxLifeValue(), document.GetAllocator());
+		monsterObject.AddMember("MaxLifeValue", monster->getMaxLifeValue(), document.GetAllocator());
 		monsterObject.AddMember("gold", monster->getGold(), document.GetAllocator());
 		monsterObject.AddMember("step", monster->getStep(), document.GetAllocator());
 		monsterObject.AddMember("speed", monster->getSpeed(), document.GetAllocator());
@@ -995,5 +1006,114 @@ void GameScene::SaveGame()
 	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
 	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
 	fileUtils->writeStringToFile(buffer.GetString(), fileUtils->getWritablePath() + path);
+}
+
+void GameScene::LoadSaveGame()
+{
+	// rapidjson 对象
+	rapidjson::Document document;
+
+	// 根据传递的关卡值selectLevel获得对应的关卡数据文件
+	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	std::string filePath = fileUtils->getWritablePath() + path;
+
+	// 读取文件内容
+	std::string contentStr = FileUtils::getInstance()->getStringFromFile(filePath);
+	// 判断文件是否为空
+	if (contentStr.empty()) {
+		CCLOG("file is empty");
+		return;
+	}
+	// 解析contentStr中json数据，并存到document中
+	document.Parse<0>(contentStr.c_str());
+
+	// 读取存档数据
+	_currNum = document["currNum"].GetInt();
+	_goldValue = document["goldValue"].GetInt();
+	carrotHealth = document["carrotHealth"].GetInt();
+	_monsterDeath = document["monsterDeath"].GetInt();
+	_monsterNum = document["monsterNum"].GetInt();
+	//  获得关卡存档的怪物
+	const rapidjson::Value& monsterArray = document["monsters"];
+	for (int i = 0; i < monsterArray.Size(); i++) {
+		// 获得每一个怪物数据
+		std::string name = monsterArray[i]["name"].GetString();
+		int lifeValue = monsterArray[i]["lifeValue"].GetInt();
+		int MaxLifeValue = monsterArray[i]["MaxLifeValue"].GetFloat();
+		int gold = monsterArray[i]["gold"].GetInt();
+		float speed = monsterArray[i]["speed"].GetFloat();
+		float screenX = monsterArray[i]["screen.x"].GetFloat();
+		float screenY = monsterArray[i]["screen.y"].GetFloat();
+		// 将数据传到MonsterData对象中
+		auto monsterData = MonsterData::create();
+		monsterData->setName(name);
+		monsterData->setCurLifeValue(lifeValue);
+		monsterData->setLifeValue(MaxLifeValue);
+		monsterData->setGold(gold);
+		monsterData->setSpeed(speed);
+		monsterData->setposition(Vec2(screenX, screenY));
+		// 将其传到关卡怪物集合中
+		_monsterSaveDatas.pushBack(monsterData);
+	}
+	// 更新isTurretAble数组
+	const rapidjson::Value& TurretMapArray = document["TurretMap"];
+	for (int i = 0; i < TurretMapArray.Size(); i++) {
+		int x = TurretMapArray[i]["x"].GetInt();
+		int y = TurretMapArray[i]["y"].GetInt();
+		int value = TurretMapArray[i]["value"].GetInt();
+		isTurretAble[x][y] = value;
+	}
+}
+
+void GameScene::initSaveGame()
+{
+	// 更新carrot
+	if (_carrot != nullptr) {
+		_carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", carrotHealth));
+	}
+	// 加载turret
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 10; j++) {
+			// 判断当前位置是否有炮塔
+			if (isTurretAble[i][j] / 10 != 0) {
+				// 获取当前炮塔种类
+				TurretData* turretData = nullptr;
+				int count = 1;
+				for (const auto& temp : _turretDatas) {
+					if (count >= isTurretAble[i][j] / 10) {
+						turretData = temp;
+						break;
+					}
+					count++;
+				}
+				Turret* turret = nullptr;
+				if (isTurretAble[i][j] / 10 == 1) {
+					turret = Turret_TB::createWithSpriteFrameName("TB", isTurretAble[i][j] % 10);
+					turret->setName("TB");
+
+				}
+				else if (isTurretAble[i][j] / 10 == 2) {
+					turret = Turret_TSun::createWithSpriteFrameName("TSun", isTurretAble[i][j] % 10);
+					turret->setName("TSun");
+				}
+				else if (isTurretAble[i][j] / 10 == 3) {
+					turret = Turret_TFan::createWithSpriteFrameName("TFan", isTurretAble[i][j] % 10);
+					turret->setName("TFan");
+				}
+				turret->setTag(i * 1000 + j);
+				turret->setPosition(TMXPosToLocation(Vec2(i, j)));
+				turret->setCost1(turretData->getCost1());
+				turret->setCost2(turretData->getCost2());
+				turret->setCost3(turretData->getCost3());
+				turret->setDamage(turretData->getDamage());
+				turret->setRange(turretData->getRange());
+				turret->setLevel(isTurretAble[i][j] % 10);
+				turret->init();
+				this->addChild(turret, 10);
+				_currentTurrets.pushBack(turret);
+			}
+		}
+	}
 }
 

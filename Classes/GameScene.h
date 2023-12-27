@@ -60,6 +60,7 @@ protected:
 
 	// 用于保存游戏进度
 	int _monsterNum = 0;             // 已经生成的怪物数量
+	Vector<MonsterData*> _monsterSaveDatas;   // 当前关卡存档怪物信息
 
 public:
 
@@ -182,6 +183,10 @@ public:
 	}
 	// 存档
 	void SaveGame();
+	// 读取存档
+	void LoadSaveGame();
+	// 读取存档后的初始化
+	void initSaveGame();
 
 	CREATE_FUNC(GameScene);
 };

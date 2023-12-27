@@ -63,6 +63,16 @@ public:
 		return _speed;
 	}
 
-
-
+	void setCurLifeValue(int curLifeValue) {
+		_curLifeValue = curLifeValue;
+	}
+	int getCurLifeValue() {
+		return _curLifeValue;
+	}
+	void setposition(Vec2 position) {
+		_position = position;
+	}
+	Vec2 getposition() {
+		return _position;
+	}
 };
