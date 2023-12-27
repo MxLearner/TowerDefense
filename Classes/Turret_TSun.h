@@ -10,10 +10,10 @@ class Turret_TSun :public Turret {
 
 public:
 
-	static Turret_TSun* createWithSpriteFrameName(const std::string name) {
+	static Turret_TSun* createWithSpriteFrameName(const std::string name,const int grade) {
 		// name 获取的是炮塔的名字，不是图片名字
 		std::string baseName = name + "_base.png"; // 塔基名
-		std::string turretName = name + "_1.png";  // 初始等级为1的炮塔
+		std::string turretName = name + "_" + std::to_string(grade) + ".png";
 		Turret_TSun* sprite = new Turret_TSun();
 		if (sprite && sprite->initWithSpriteFrameName(baseName)) {
 			sprite->autorelease();

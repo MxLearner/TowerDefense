@@ -22,8 +22,8 @@ protected:
 	float _screenWidth, _screenHeight;  //屏幕宽高
 
 	// 初始化参数
-	int _currNum=1;            // 当前怪物波数
-	int _goldValue=200;          // 玩家当前金币数量
+	int _currNum = 1;            // 当前怪物波数
+	int _goldValue = 2000;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
 
@@ -31,8 +31,8 @@ protected:
 	std::string _tileFile;   // 关卡地图名称，文件路径
 	TMXTiledMap* _tileMap;   // 地图
 	TMXLayer* _collidable;   // 障碍层，不可建造的位置
-	int _monsterAll ;                    // 关卡怪物总数量
-	int _monsterWave ;                     // 怪物波数
+	int _monsterAll;                    // 关卡怪物总数量
+	int _monsterWave;                     // 怪物波数
 	std::vector<int> _everyWave;                  // 每波怪物数量
 	Vector<MonsterData*> _monsterDatas;   // 当前关卡所有怪物信息
 	Vector<TurretData*> _turretDatas;     // 当前关卡炮台信息
@@ -48,6 +48,17 @@ protected:
 	Label* _numberLabel;                  // 显示怪物波数
 	Label* _curNumberLabel;               // 显示当前怪物波数
 	Label* _goldLabel;                    // 显示当前玩家金币
+
+	//游戏内功能实现需要
+	EventMouse* buildEvent;           //记录防御塔建造位置的点击事件
+	int hasBuild = 0;                 //记录是否已经调出建造界面
+	int hasUpgrade = 0;               //记录是否已经调出升级出售界面
+	Layer* touchLayer;				//用于建造升级出售界面的层
+	EventListenerMouse* touchListener;//用于建造升级出售界面的监听器
+
+	// 用于保存游戏进度
+	int _monsterNum = 0;             // 已经生成的怪物数量
+
 public:
 
 	// 根据关卡编号创建游戏关卡场景
@@ -63,11 +74,24 @@ public:
 
 	// 开始时倒计时，也可用于暂停后重新开始
 	void CountDown();
-	
+
 	// 鼠标点击事件,用于选择创建炮台
 	void onMouseDown(EventMouse* event);
+
+	//点击空地事件
+	void TouchLand(EventMouse* event);
+	//建造塔事件
+	void BuildTower(EventMouse* event, int numTower);
+	//点击塔的事件
+	void TouchTower(EventMouse* event);
+	//升级塔的事件
+	void UpgradeTower(EventMouse* event);
+	//出售塔的事件
+	void SaleTower(EventMouse* event);
+
 	// TMX point ->Screen
-    // 地图格子坐标转化成屏幕坐标
+	// 地图格子坐标转化成屏幕坐标
+
 	Vec2 TMXPosToLocation(Vec2 pos);
 	// Screen ->TMX point
 	// 屏幕坐标转化成地图格子坐标	
@@ -97,6 +121,65 @@ public:
 	void updateMonster();
 	// 更新游戏状态，更新当前玩家金币标签，判断游戏是否结束：成功或失败
 	void updateGameState();
+
+	void setBuildEvent(EventMouse* event) {
+		buildEvent = event;
+	}
+
+	EventMouse* getBuildEvent() {
+		return buildEvent;
+	}
+
+	void setHasBuild(int b) {
+		hasBuild = b;
+	}
+
+	int getHasBuild() {
+		return hasBuild;
+	}
+
+	void setHasUpgrade(int b) {
+		hasUpgrade = b;
+	}
+
+	int getHasUpgrade() {
+		return hasUpgrade;
+	}
+
+
+	void createTouchLayer() {
+		touchLayer = Layer::create();
+	}
+
+	void removeTouchLayer() {
+		touchLayer = NULL;
+	}
+
+	void setTouchLayer(Layer* ptr) {
+		touchLayer = ptr;
+	}
+
+	Layer* getTouchLayer() {
+		return touchLayer;
+	}
+
+	void createTouchListener() {
+		touchListener = EventListenerMouse::create();
+	}
+
+	void removeTouchListener() {
+		touchListener = NULL;
+	}
+
+	void setTouchListener(EventListenerMouse* ptr) {
+		touchListener = ptr;
+	}
+
+	EventListenerMouse* getTouchListener() {
+		return touchListener;
+	}
+
+
 
 	CREATE_FUNC(GameScene);
 };

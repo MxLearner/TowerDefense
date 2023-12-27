@@ -15,6 +15,9 @@ private:
 	int _cost3;
 	float _range;
 	int _damage;
+	// 用于保存进度
+	int mapX = 0;
+	int mapY = 0;
 public:
 
 	// 创造TurretData
