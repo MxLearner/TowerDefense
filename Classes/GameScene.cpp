@@ -1,5 +1,6 @@
 
 
+
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
 #include"Turret_TB.h"
@@ -836,6 +837,7 @@ void GameScene::generateMonsterWave() {
 					monster->setGold(monsterData->getGold());
 					monster->setSpeed(monsterData->getSpeed());
 					monster->setPointPath(_pathPoints); // 传递路径给怪物
+					monster->setName(monsterData->getName());
 					this->addChild(monster, 8);
 					monster->startMoving();
 					_monsterNum++;
@@ -878,10 +880,12 @@ Vector<Monster*>& GameScene::getMonsters() {
 
 void GameScene::update(float dt)
 {
-
+	// 更新怪物
 	updateMonster();
-	// 先注释掉
+	// 更新游戏界面
 	updateGameState();
+	// 更新存档
+	SaveGame();
 }
 
 void GameScene::updateMonster()
@@ -931,5 +935,65 @@ void GameScene::updateGameState()
 	if (_monsterDeath >= _monsterAll) {
 		CCLOG("***************YOU WIN*******************");
 	}
+}
+// 要存档数据
+//int _currNum = 1;            // 当前怪物波数
+//int _goldValue = 2000;          // 玩家当前金币数量
+//int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
+//int isTurretAble[15][10];               // 可建造炮台的位置地图，并且记录位置上炮塔种类等级
+//Vector<Monster*> _currentMonsters;       // 场上现存的怪物
+//int _monsterDeath = 0;                   // 被摧毁的怪物，包括被打死的和到终点的
+//int _monsterNum = 0;             // 已经生成的怪物数量
+void GameScene::SaveGame()
+{
+	rapidjson::Document document;
+	document.SetObject();
+	document.AddMember("currNum", _currNum, document.GetAllocator());
+	document.AddMember("goldValue", _goldValue, document.GetAllocator());
+	document.AddMember("carrotHealth", carrotHealth, document.GetAllocator());
+	document.AddMember("monsterDeath", _monsterDeath, document.GetAllocator());
+	document.AddMember("monsterNum", _monsterNum, document.GetAllocator());
+	rapidjson::Value monsters(rapidjson::kArrayType);
+	for (const auto& monster : _currentMonsters) {
+		if (monster == nullptr) {
+			continue;
+		}
+		rapidjson::Value monsterObject(rapidjson::kObjectType);
+		//monsterObject.AddMember("name", rapidjson::StringRef(monster->getName().c_str()), document.GetAllocator());
+		std::string monsterName = monster->getName();  // 假设 monster->getName() 返回一个 std::string
+
+		rapidjson::Value monsterNameValue(rapidjson::kStringType);
+		monsterNameValue.SetString(monsterName.c_str(), monsterName.length(), document.GetAllocator());
+		monsterObject.AddMember("name", monsterNameValue, document.GetAllocator());
+		monsterObject.AddMember("lifeValue", monster->getLifeValue(), document.GetAllocator());
+		monsterObject.AddMember("MaxLiveValue", monster->getMaxLifeValue(), document.GetAllocator());
+		monsterObject.AddMember("gold", monster->getGold(), document.GetAllocator());
+		monsterObject.AddMember("step", monster->getStep(), document.GetAllocator());
+		monsterObject.AddMember("speed", monster->getSpeed(), document.GetAllocator());
+		monsterObject.AddMember("screen.x", monster->getPosition().x, document.GetAllocator());
+		monsterObject.AddMember("screen.y", monster->getPosition().y, document.GetAllocator());
+		monsters.PushBack(monsterObject, document.GetAllocator());
+	}
+	document.AddMember("monsters", monsters, document.GetAllocator());
+	rapidjson::Value TurretMap(rapidjson::kArrayType);
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 10; j++) {
+			rapidjson::Value isTurretAbleObject(rapidjson::kObjectType);
+			isTurretAbleObject.AddMember("x", i, document.GetAllocator());
+			isTurretAbleObject.AddMember("y", j, document.GetAllocator());
+			isTurretAbleObject.AddMember("value", isTurretAble[i][j], document.GetAllocator());
+			TurretMap.PushBack(isTurretAbleObject, document.GetAllocator());
+		}
+	}
+	document.AddMember("TurretMap", TurretMap, document.GetAllocator());
+	// 创建一个 rapidjson::StringBuffer 对象，用于存储 JSON 字符串
+	rapidjson::StringBuffer buffer;
+	// 创建一个 rapidjson::Writer 对象，用于将 JSON 文档写入到 StringBuffer 中
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	// 将 JSON 文档写入 StringBuffer 中
+	document.Accept(writer);
+	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	fileUtils->writeStringToFile(buffer.GetString(), fileUtils->getWritablePath() + path);
 }
 

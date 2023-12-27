@@ -18,6 +18,7 @@ private:
 	int _curLifeValue;    // 怪物当前生命
 	Vec2 _position;      // 位置
 	int _step;             // 已走步数
+	Vec2 position;		// 位置
 
 
 public:

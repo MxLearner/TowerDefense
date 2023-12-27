@@ -11,6 +11,8 @@
 #include"TurretData.h"
 #include"MonsterData.h"
 #include"json/document.h"
+#include "json/writer.h"
+#include "json/stringbuffer.h"
 
 USING_NS_CC;
 
@@ -178,8 +180,8 @@ public:
 	EventListenerMouse* getTouchListener() {
 		return touchListener;
 	}
-
-
+	// ´æµµ
+	void SaveGame();
 
 	CREATE_FUNC(GameScene);
 };

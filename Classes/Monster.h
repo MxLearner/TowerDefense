@@ -15,6 +15,7 @@ using namespace ui;
 // Monster类
 class Monster : public Sprite {
 private:
+	std::string _name;          // 怪物名
 	float _lifeValue = 10;        // 生命值
 	float _maxLifeValue = 10;     // 最大生命值
 	LoadingBar* _HP;       // 进度条效果表示血条
@@ -42,7 +43,6 @@ public:
 			auto HPBackground = Sprite::create("CarrotGuardRes/UI/HPBackground.png");
 			HPBackground->setPosition(Vec2(sprite->getContentSize().width / 2, sprite->getContentSize().height * 1.3f));
 			sprite->addChild(HPBackground, 0);
-
 			return sprite;
 		}
 		CC_SAFE_DELETE(sprite);
@@ -100,6 +100,19 @@ public:
 	}
 	int getStep() {
 		return _step;
+	}
+	float getSpeed() {
+		return _speed;
+	}
+	float getMaxLifeValue() {
+		return _maxLifeValue;
+	}
+
+	void setName(std::string name) {
+		_name = name;
+	}
+	std::string getName() {
+		return _name;
 	}
 };
 
