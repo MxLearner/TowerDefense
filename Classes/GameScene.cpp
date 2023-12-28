@@ -12,7 +12,7 @@ using namespace ui;
 USING_NS_CC;
 
 static int currentLevel = 1;  // 当前关卡
-static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
+static int  IS_LOAD_SAVE_GAME = 0; // 是否加载存档
 
 #define DEBUG
 // 根据关卡编号创建游戏关卡场景
