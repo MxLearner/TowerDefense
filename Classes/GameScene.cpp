@@ -12,7 +12,7 @@ using namespace ui;
 USING_NS_CC;
 
 static int currentLevel = 1;  // 当前关卡
-static int  IS_LOAD_SAVE_GAME = 0; // 是否加载存档
+static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
 
 #define DEBUG
 // 根据关卡编号创建游戏关卡场景
@@ -1112,15 +1112,20 @@ void GameScene::initSaveGame()
 				if (isTurretAble[i][j] / 10 == 1) {
 					turret = Turret_TB::createWithSpriteFrameName("TB", isTurretAble[i][j] % 10);
 					turret->setName("TB");
+					turret->setLevel(isTurretAble[i][j] % 10);
 
 				}
 				else if (isTurretAble[i][j] / 10 == 2) {
 					turret = Turret_TSun::createWithSpriteFrameName("TSun", isTurretAble[i][j] % 10);
 					turret->setName("TSun");
+					turret->setLevel(isTurretAble[i][j] % 10);
+
 				}
 				else if (isTurretAble[i][j] / 10 == 3) {
 					turret = Turret_TFan::createWithSpriteFrameName("TFan", isTurretAble[i][j] % 10);
 					turret->setName("TFan");
+					turret->setLevel(isTurretAble[i][j] % 10);
+
 				}
 				turret->setTag(i * 1000 + j);
 				turret->setPosition(TMXPosToLocation(Vec2(i, j)));
@@ -1129,6 +1134,11 @@ void GameScene::initSaveGame()
 				turret->setCost3(turretData->getCost3());
 				turret->setDamage(turretData->getDamage());
 				turret->setRange(turretData->getRange());
+				// 更改伤害范围
+				for (int i = 1; i < turret->getLevel(); i++) {
+					turret->setDamage(turret->getDamage() * 2.0);
+					turret->setRange(turret->getRange() * 2.0);
+				}
 				turret->setLevel(isTurretAble[i][j] % 10);
 				//turret->init();
 				this->addChild(turret, 10);

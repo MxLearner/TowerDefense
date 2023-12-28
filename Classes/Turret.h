@@ -120,6 +120,9 @@ public:
 	void setLevel(int level) {
 		_level = level;
 	}
+	int getLevel() {
+		return _level;
+	}
 	void upgrade();
 };
 

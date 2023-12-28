@@ -90,6 +90,6 @@ void SkyLineSelection::ToAdvantureScene(Ref* pSender) {
 
 void SkyLineSelection::ToGameScene(Ref* pSender) {
 
-	auto gameScene = GameScene::createSceneWithLevel(2);
+	auto gameScene = GameScene::createSceneWithLevel(1);
 	Director::getInstance()->replaceScene(gameScene);
 }
