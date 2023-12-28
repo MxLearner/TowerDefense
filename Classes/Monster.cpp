@@ -54,6 +54,8 @@ void Monster::startMoving()
 	// 在动作序列完成后执行回调，移除怪物，此逻辑移到gamescene，
 	// 使用 s 同时执行动作序列和回调
 	auto s = Sequence::create(sequence, callback, nullptr);
+	if (s != nullptr) {
+		runAction(s);
+	}
 
-	runAction(s);
 }

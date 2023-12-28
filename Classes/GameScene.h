@@ -24,7 +24,7 @@ protected:
 	float _screenWidth, _screenHeight;  //屏幕宽高
 
 	// 初始化参数
-	int _currNum = 1;            // 当前怪物波数
+	int _currNum = 0;            // 当前怪物波数
 	int _goldValue = 2000;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
@@ -187,6 +187,8 @@ public:
 	void LoadSaveGame();
 	// 读取存档后的初始化
 	void initSaveGame();
+	// 开始存档游戏
+	void beganSaveGame();
 
 	CREATE_FUNC(GameScene);
 };

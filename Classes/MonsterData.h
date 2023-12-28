@@ -75,4 +75,10 @@ public:
 	Vec2 getposition() {
 		return _position;
 	}
+	void setStep(int step) {
+		_step = step;
+	}
+	int getStep() {
+		return _step;
+	}
 };

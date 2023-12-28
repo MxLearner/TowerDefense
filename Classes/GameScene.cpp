@@ -7,14 +7,12 @@
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
 
-#define IS_LOAD_SAVE_GAME 1
-
 
 using namespace ui;
 USING_NS_CC;
 
 static int currentLevel = 1;  // 当前关卡
-
+static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
 
 #define DEBUG
 // 根据关卡编号创建游戏关卡场景
@@ -66,8 +64,7 @@ bool GameScene::init()
 	listener->onMouseDown = CC_CALLBACK_1(GameScene::onMouseDown, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
-	// 生成怪物
-	generateMonsters();
+
 
 	//初始化建造塔和升级塔的点击事件
 	setBuildEvent(NULL);
@@ -696,7 +693,7 @@ void GameScene::TopLabel()
 	// 注意屏幕数据的父节点应该是scece ，而不是瓦片地图，因为瓦片地图进行了缩放，
 	// 如果是瓦片地图的子节点基于屏幕的setposition 会进行缩放，被挤出屏幕！！！！
 	// 1. 显示出现了多少波怪物
-	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum), "Arial", 32);
+	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", std::min(_currNum, _monsterWave)), "Arial", 32);
 	_curNumberLabel->setColor(Color3B::RED);
 	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.95);
 	//_tileMap->addChild(_curNumberLabel);
@@ -740,9 +737,13 @@ void GameScene::CountDown()
 	label2->setVisible(false);
 	label3->setVisible(false);
 
-	this->addChild(label1, 2);
-	this->addChild(label2, 2);
-	this->addChild(label3, 2);
+	this->addChild(label1, 20);
+	this->addChild(label2, 20);
+	this->addChild(label3, 20);
+	//存档怪物的回调函数
+	auto baginSaveGame = CallFunc::create([=] {
+		beganSaveGame();
+		});
 
 	// 设置倒数sequence动作
 	auto countdown = Sequence::create(CallFunc::create([=] {
@@ -759,8 +760,13 @@ void GameScene::CountDown()
 							this->removeChild(label1);
 							// 游戏主循环
 							scheduleUpdate();
+							// 加载存档
+							if (IS_LOAD_SAVE_GAME) {
+								beganSaveGame();
+							}
+							// 生成怪物
+							generateMonsters();
 							}), NULL);
-
 
 	this->runAction(countdown);
 }
@@ -812,20 +818,26 @@ Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 // 生成怪物
 // 每波怪物5.0s，每个怪生成间隔0.5s
 void GameScene::generateMonsters() {
-	_currNum = 0;
-
+	float interval = 5.0f;
+	//this->scheduleOnce([=](float dt) {
+	//	_currNum++;
+	//	if (_currNum <= _monsterWave) {
+	//		_curNumberLabel->setString(StringUtils::format("%d", _currNum));
+	//		generateMonsterWave();
+	//	}
+	//	}, 0.1f);
 	this->schedule([=](float dt) {
 		_currNum++;
 		if (_currNum <= _monsterWave) {
 			_curNumberLabel->setString(StringUtils::format("%d", _currNum));
 			generateMonsterWave();
-
 		}
 		else {
 			unschedule("generateMonsters");
 		}
 
-		}, 5.0f, "generateMonsters");
+		}, interval, "generateMonsters");
+
 }
 
 // 调好了hhh,注意mutable在lambda的使用，及from++，注意每次调用的话lambda中的from都会在上一次基础上++，而不是固定的from+1，
@@ -833,6 +845,10 @@ void GameScene::generateMonsters() {
 void GameScene::generateMonsterWave() {
 
 	//_monsterNum;
+	if (_currNum > _monsterWave) {
+
+		return;
+	}
 	int end = _everyWave[_currNum];
 	this->schedule([=](float dt)mutable {
 		int i = 0;
@@ -1039,9 +1055,10 @@ void GameScene::LoadSaveGame()
 	for (int i = 0; i < monsterArray.Size(); i++) {
 		// 获得每一个怪物数据
 		std::string name = monsterArray[i]["name"].GetString();
-		int lifeValue = monsterArray[i]["lifeValue"].GetInt();
+		float lifeValue = monsterArray[i]["lifeValue"].GetFloat();
 		int MaxLifeValue = monsterArray[i]["MaxLifeValue"].GetFloat();
 		int gold = monsterArray[i]["gold"].GetInt();
+		int step = monsterArray[i]["step"].GetInt();
 		float speed = monsterArray[i]["speed"].GetFloat();
 		float screenX = monsterArray[i]["screen.x"].GetFloat();
 		float screenY = monsterArray[i]["screen.y"].GetFloat();
@@ -1051,6 +1068,7 @@ void GameScene::LoadSaveGame()
 		monsterData->setCurLifeValue(lifeValue);
 		monsterData->setLifeValue(MaxLifeValue);
 		monsterData->setGold(gold);
+		monsterData->setStep(step);
 		monsterData->setSpeed(speed);
 		monsterData->setposition(Vec2(screenX, screenY));
 		// 将其传到关卡怪物集合中
@@ -1069,8 +1087,11 @@ void GameScene::LoadSaveGame()
 void GameScene::initSaveGame()
 {
 	// 更新carrot
-	if (_carrot != nullptr) {
+	if (_carrot != nullptr && carrotHealth > 0) {
 		_carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", carrotHealth));
+	}
+	if (_carrot != nullptr && carrotHealth <= 0) {
+		_carrot->removeFromParent();
 	}
 	// 加载turret
 	for (int i = 0; i < 15; i++) {
@@ -1109,11 +1130,43 @@ void GameScene::initSaveGame()
 				turret->setDamage(turretData->getDamage());
 				turret->setRange(turretData->getRange());
 				turret->setLevel(isTurretAble[i][j] % 10);
-				turret->init();
+				//turret->init();
 				this->addChild(turret, 10);
 				_currentTurrets.pushBack(turret);
 			}
 		}
 	}
+	// 加载怪物
+	for (const auto& monsterData : _monsterSaveDatas) {
+		auto monster = Monster::createWithSpriteFrameName(monsterData->getName());
+		_currentMonsters.pushBack(monster);
+		// 锚点设为中心
+		monster->setAnchorPoint(Vec2(0.5f, 0.5f));
+		monster->setMaxLifeValue(monsterData->getLifeValue());
+		monster->setLifeValue(monsterData->getCurLifeValue());
+		monster->setGold(monsterData->getGold());
+		monster->setSpeed(monsterData->getSpeed());
+		monster->setPointPath(_pathPoints); // 传递路径给怪物
+		monster->setName(monsterData->getName());
+		monster->setPosition(monsterData->getposition());
+		monster->setStep(monsterData->getStep());
+		monster->setHP();
+		this->addChild(monster, 8);
+		//monster->startMoving();
+
+	}
+}
+
+void GameScene::beganSaveGame()
+{
+	for (auto turret : _currentTurrets)
+	{
+		turret->init();
+	}
+	for (auto monster : _currentMonsters) {
+		monster->startMoving();
+	}
+	// 生成这波没生成完的怪物
+	generateMonsterWave();
 }
 

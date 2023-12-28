@@ -58,7 +58,7 @@ public:
 		_lifeValue = maxLifeValue;
 		_maxLifeValue = maxLifeValue;
 	}
-	int getLifeValue() {
+	float getLifeValue() {
 		return _lifeValue;
 	}
 
@@ -97,6 +97,9 @@ public:
 	}
 	bool getisLastPoint() {
 		return isLastPoint;
+	}
+	void setStep(int step) {
+		_step = step;
 	}
 	int getStep() {
 		return _step;
