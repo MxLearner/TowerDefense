@@ -1,20 +1,37 @@
-
-
-
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
 #include"Turret_TB.h"
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
 
-
 using namespace ui;
 USING_NS_CC;
 
 static int currentLevel = 1;  // 当前关卡
-static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
+static int  IS_LOAD_SAVE_GAME = 0; // 是否加载存档
+
+static int IS_BEGAN_SERVER = 1;// 是否开启联机
 
 #define DEBUG
+void GameScene::startServer()
+{
+	std::lock_guard<std::mutex> lock(serverMutex);
+
+	if (udpserver.Start()) {
+		udpserver.Receive();
+	}
+	else {
+		CCLOG("server start failed");
+	}
+}
+//GameScene::~GameScene()
+//{
+//	// 关闭服务器
+//	if (IS_BEGAN_SERVER) {
+//		std::lock_guard<std::mutex> lock(serverMutex);
+//		udpserver.Stop(); // Assuming there's a method to stop the server
+//	}
+//}
 // 根据关卡编号创建游戏关卡场景
 Scene* GameScene::createSceneWithLevel(int selectLevel)
 {   // 获得关卡编号
@@ -40,6 +57,13 @@ bool GameScene::init()
 #ifdef DEBUG
 	CCLOG("screenWidth:  %lf, screenHeight:  %lf", _screenWidth, _screenHeight);
 #endif // DEBUG
+
+	// 开启服务端
+	if (IS_BEGAN_SERVER) {
+		std::thread serverThread(&GameScene::startServer, this);
+		serverThread.detach();
+	}
+
 
 	// 读取关卡数据 
 	LoadLevelData();
@@ -819,13 +843,6 @@ Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 // 每波怪物5.0s，每个怪生成间隔0.5s
 void GameScene::generateMonsters() {
 	float interval = 5.0f;
-	//this->scheduleOnce([=](float dt) {
-	//	_currNum++;
-	//	if (_currNum <= _monsterWave) {
-	//		_curNumberLabel->setString(StringUtils::format("%d", _currNum));
-	//		generateMonsterWave();
-	//	}
-	//	}, 0.1f);
 	this->schedule([=](float dt) {
 		_currNum++;
 		if (_currNum <= _monsterWave) {

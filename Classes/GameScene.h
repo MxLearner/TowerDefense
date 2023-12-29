@@ -13,6 +13,9 @@
 #include"json/document.h"
 #include "json/writer.h"
 #include "json/stringbuffer.h"
+#include"server.h"
+#include"client.h"
+
 
 USING_NS_CC;
 
@@ -62,8 +65,14 @@ protected:
 	int _monsterNum = 0;             // 已经生成的怪物数量
 	Vector<MonsterData*> _monsterSaveDatas;   // 当前关卡存档怪物信息
 
-public:
+	// 联机服务端
+	UDPServer udpserver;
+	std::mutex serverMutex; // 互斥锁
+	void startServer();
 
+public:
+	//
+	//~GameScene();
 	// 根据关卡编号创建游戏关卡场景
 	static Scene* createSceneWithLevel(int selectLevel);
 	// 关卡场景初始化
