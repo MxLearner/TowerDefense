@@ -73,6 +73,8 @@ void UDPServer::Receive()
 		printf("Received from %s:%d - %s\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), buff);
 
 		// Respond to the client
-		sendto(sockfd, buff, strlen(buff), 0, (sockaddr*)&clientAddr, sizeof(clientAddr));
+		const char* sendBuffer = gameMassageBuffer.c_str();
+		sendto(sockfd, sendBuffer, strlen(sendBuffer), 0, (sockaddr*)&clientAddr, sizeof(clientAddr));
 	}
 }
+

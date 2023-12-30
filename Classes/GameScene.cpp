@@ -3,11 +3,11 @@
 #include"Turret_TB.h"
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
-
+#include <regex>
 using namespace ui;
 USING_NS_CC;
 
-static int currentLevel = 1;  // 当前关卡
+static int currentLevel = 2;  // 当前关卡
 static int  IS_LOAD_SAVE_GAME = 0; // 是否加载存档
 
 static int IS_BEGAN_SERVER = 1;// 是否开启联机
@@ -24,14 +24,7 @@ void GameScene::startServer()
 		CCLOG("server start failed");
 	}
 }
-//GameScene::~GameScene()
-//{
-//	// 关闭服务器
-//	if (IS_BEGAN_SERVER) {
-//		std::lock_guard<std::mutex> lock(serverMutex);
-//		udpserver.Stop(); // Assuming there's a method to stop the server
-//	}
-//}
+
 // 根据关卡编号创建游戏关卡场景
 Scene* GameScene::createSceneWithLevel(int selectLevel)
 {   // 获得关卡编号
@@ -103,7 +96,6 @@ bool GameScene::init()
 }
 void GameScene::LoadLevelData()
 {
-
 	// rapidjson 对象
 	rapidjson::Document document;
 
@@ -846,7 +838,6 @@ void GameScene::generateMonsters() {
 	this->schedule([=](float dt) {
 		_currNum++;
 		if (_currNum <= _monsterWave) {
-			_curNumberLabel->setString(StringUtils::format("%d", _currNum));
 			generateMonsterWave();
 		}
 		else {
@@ -930,6 +921,8 @@ void GameScene::update(float dt)
 	updateGameState();
 	// 更新存档
 	SaveGame();
+	// 更新gamemassagebuffer
+	udpserver.setGameMassageBuffer(gameMassageBuffer);
 }
 
 void GameScene::updateMonster()
@@ -967,6 +960,8 @@ void GameScene::updateGameState()
 {
 	// 更新金币标签
 	_goldLabel->setString(StringUtils::format("%d", _goldValue));
+	// 更新波数标签
+	_curNumberLabel->setString(StringUtils::format("%d", _currNum > _monsterWave ? _monsterWave : _currNum));
 	// 判断游戏是否结束：成功或失败
 	//==========待完善============
 	// 失败
@@ -992,6 +987,7 @@ void GameScene::SaveGame()
 {
 	rapidjson::Document document;
 	document.SetObject();
+	document.AddMember("currentLevel", currentLevel, document.GetAllocator());
 	document.AddMember("currNum", _currNum, document.GetAllocator());
 	document.AddMember("goldValue", _goldValue, document.GetAllocator());
 	document.AddMember("carrotHealth", carrotHealth, document.GetAllocator());
@@ -1003,9 +999,8 @@ void GameScene::SaveGame()
 			continue;
 		}
 		rapidjson::Value monsterObject(rapidjson::kObjectType);
-		//monsterObject.AddMember("name", rapidjson::StringRef(monster->getName().c_str()), document.GetAllocator());
-		std::string monsterName = monster->getName();  // 假设 monster->getName() 返回一个 std::string
-
+		// string 写入
+		std::string monsterName = monster->getName();
 		rapidjson::Value monsterNameValue(rapidjson::kStringType);
 		monsterNameValue.SetString(monsterName.c_str(), monsterName.length(), document.GetAllocator());
 		monsterObject.AddMember("name", monsterNameValue, document.GetAllocator());
@@ -1030,12 +1025,45 @@ void GameScene::SaveGame()
 		}
 	}
 	document.AddMember("TurretMap", TurretMap, document.GetAllocator());
+	//****************************
+	// 有bug 内存访问错误，但是复现不出来了
+	// 
+	//****************************
+
+	rapidjson::Value bullets(rapidjson::kArrayType);
+	// 获取当前场景中的所有子节点
+	auto children = this->getChildren();
+	// 正则表达式
+	std::regex pattern(".*bullet.*");
+	for (const auto& child : children) {
+		auto sprite = dynamic_cast<Sprite*>(child);// 将child转化为Sprite类型
+		// 判断是否是子弹
+		if (sprite && std::regex_match(sprite->getName(), pattern)) {//
+			rapidjson::Value bulletObject(rapidjson::kObjectType);
+			// string 写入
+			std::string spriteName = sprite->getName();
+			rapidjson::Value spriteNameValue(rapidjson::kStringType);
+			spriteNameValue.SetString(spriteName.c_str(), spriteName.length(), document.GetAllocator());
+			bulletObject.AddMember("name", spriteNameValue, document.GetAllocator());
+			bulletObject.AddMember("screen.x", sprite->getPosition().x, document.GetAllocator());
+			bulletObject.AddMember("screen.y", sprite->getPosition().y, document.GetAllocator());
+			bulletObject.AddMember("contentSize.x", sprite->getContentSize().width, document.GetAllocator());
+			bulletObject.AddMember("contentSize.y", sprite->getContentSize().height, document.GetAllocator());
+			bullets.PushBack(bulletObject, document.GetAllocator());
+		}
+	}
+	document.AddMember("bullets", bullets, document.GetAllocator());
+
+
+
+
 	// 创建一个 rapidjson::StringBuffer 对象，用于存储 JSON 字符串
-	rapidjson::StringBuffer buffer;
+	rapidjson::StringBuffer buffer;// StringBuffer 是一个可变的字符序列，可以像 std::string 一样使用
 	// 创建一个 rapidjson::Writer 对象，用于将 JSON 文档写入到 StringBuffer 中
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	// 将 JSON 文档写入 StringBuffer 中
-	document.Accept(writer);
+	document.Accept(writer);// Accept() 接受一个 Document 对象，将其以 JSON 格式写入到 StringBuffer 中
+	gameMassageBuffer = buffer.GetString(); // 将 StringBuffer 中的字符输出到 std::string 中
 	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
 	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
 	fileUtils->writeStringToFile(buffer.GetString(), fileUtils->getWritablePath() + path);

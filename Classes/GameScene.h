@@ -64,11 +64,11 @@ protected:
 	// 用于保存游戏进度
 	int _monsterNum = 0;             // 已经生成的怪物数量
 	Vector<MonsterData*> _monsterSaveDatas;   // 当前关卡存档怪物信息
-
+	std::string gameMassageBuffer; // 用于存档的json
 	// 联机服务端
 	UDPServer udpserver;
 	std::mutex serverMutex; // 互斥锁
-	void startServer();
+
 
 public:
 	//
@@ -78,11 +78,11 @@ public:
 	// 关卡场景初始化
 	virtual bool init();
 	// 获取json关卡数据
-	void LoadLevelData();
+	virtual void LoadLevelData();
 	// 关卡初始化，加载地图，萝卜 ，初始化可见炮塔数组
-	void initLevel();
+	virtual void initLevel();
 	// 屏幕顶部标签
-	void TopLabel();
+	virtual void TopLabel();
 
 	// 开始时倒计时，也可用于暂停后重新开始
 	void CountDown();
@@ -198,6 +198,14 @@ public:
 	void initSaveGame();
 	// 开始存档游戏
 	void beganSaveGame();
+
+	// 服务器端
+	void startServer();
+	//
+	void onExit() {
+		udpserver.Stop();
+		Layer::onExit();
+	}
 
 	CREATE_FUNC(GameScene);
 };

@@ -1,5 +1,6 @@
 #include "client.h"
-
+#include"cocos2d.h"
+USING_NS_CC;
 UDPClient::UDPClient() : sockfd(INVALID_SOCKET)
 {
 	// 初始化winsock
@@ -40,7 +41,9 @@ bool UDPClient::Connect()
 
 void UDPClient::Send(const char* message)
 {
-	sendto(sockfd, message, strlen(message), 0, (sockaddr*)&servaddr, sizeof(servaddr));
+	if (sendto(sockfd, message, strlen(message), 0, (sockaddr*)&servaddr, sizeof(servaddr)) == -1) {
+		CCLOG("client send error");
+	}
 
 }
 
@@ -48,15 +51,27 @@ void UDPClient::Receive()
 {
 	char buff[BUFFSIZE];
 
-	while (true) {
+	while (isReceiving) {
 		int bytesRead = recvfrom(sockfd, buff, BUFFSIZE - 1, 0, NULL, NULL);
 
 		if (bytesRead == SOCKET_ERROR) {
 			printf("Receive error\n");
-			break;
+			continue;
 		}
 
 		buff[bytesRead] = '\0';
-		printf("Received from server: %s\n", buff);
+		message = buff;
 	}
+}
+
+void UDPClient::stop()
+{
+	isReceiving = false;
+	// 关闭套接字
+	if (sockfd != INVALID_SOCKET) {
+		closesocket(sockfd);
+		printf("Server closed\n");
+	}
+	// 清理winsock
+	WSACleanup();
 }
