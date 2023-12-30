@@ -5,13 +5,12 @@
 #include"Turret_TB.h"
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
-
+#include"SkyLineSelection.h"
 
 
 using namespace ui;
 USING_NS_CC;
 
-static int monsterCount = 5;   // Ã¿Ò»²¨³öÏÖ¶àÉÙ¹ÖÎï
 static int currentLevel = 1;  // µ±Ç°¹Ø¿¨
 
 
@@ -22,7 +21,6 @@ Scene* GameScene::createSceneWithLevel(int selectLevel)
 	currentLevel = selectLevel;
 
 	auto scene = Scene::create();
-	
 	auto layer = GameScene::create();
 	layer->setName("layer"); // Éè¸öÃû×Ö
 	scene->addChild(layer);
@@ -50,7 +48,7 @@ bool GameScene::init()
 	TopLabel();
 	// ¿ªÊ¼ÓÎÏ·Ê±£¬µ¹¼ÆÊ±
 	CountDown();
-    // ´´ÔìÊó±êµã»÷Ê±¼ä£¬ÓÃÓÚ½¨Ëş
+	// ´´ÔìÊó±êµã»÷Ê±¼ä£¬ÓÃÓÚ½¨Ëş
 	auto listener = EventListenerMouse::create();
 	//listener->onMouseDown = CC_CALLBACK_1(GameScene::onClicked, this);
 	listener->onMouseDown = CC_CALLBACK_1(GameScene::onMouseDown, this);
@@ -58,9 +56,9 @@ bool GameScene::init()
 
 	// Éú³É¹ÖÎï
 	generateMonsters();
-	
+
 	//³õÊ¼»¯½¨ÔìËşºÍÉı¼¶ËşµÄµã»÷ÊÂ¼ş
-	setBuildEvent(NULL);		
+	setBuildEvent(NULL);
 	setHasBuild(0);
 	setHasUpgrade(0);
 	createTouchLayer();
@@ -68,17 +66,22 @@ bool GameScene::init()
 	createTouchListener();
 	setTouchListener(NULL);
 
+	//³õÊ¼»¯¶ş±¶ËÙ±ê¼Ç
+	setIsDoubleSpeed(0);
+	//³õÊ¼»¯×îºóÒ»²¨µÄ±ê¼Ç
+	setIsFinalWave(0);
+
 	return true;
 }
 void GameScene::LoadLevelData()
 {
-		
+
 	// rapidjson ¶ÔÏó
 	rapidjson::Document document;
 
 	// ¸ù¾İ´«µİµÄ¹Ø¿¨ÖµselectLevel»ñµÃ¶ÔÓ¦µÄ¹Ø¿¨Êı¾İÎÄ¼ş
 	std::string filePath = FileUtils::getInstance()->
-		fullPathForFilename(StringUtils::format("CarrotGuardRes/LeveL_%d.data", currentLevel)); 
+		fullPathForFilename(StringUtils::format("CarrotGuardRes/LeveL_%d.data", currentLevel));
 
 	// ¶ÁÈ¡ÎÄ¼şÄÚÈİ
 	std::string contentStr = FileUtils::getInstance()->getStringFromFile(filePath);
@@ -91,7 +94,7 @@ void GameScene::LoadLevelData()
 	_tileFile = document["tileFile"].GetString();
 	// 2. ¹ÖÎï×ÜÊı
 	_monsterAll = document["monsterAll"].GetInt();
-    // 3. ¹ÖÎï²¨Êı
+	// 3. ¹ÖÎï²¨Êı
 	_monsterWave = document["monsterWave"].GetInt();
 	// 4.Ã¿²¨¹ÖÎïÊıÁ¿
 	const rapidjson::Value& waveArray = document["everyWave"];
@@ -146,12 +149,12 @@ void GameScene::LoadLevelData()
 	// https://github.com/cocos2d/cocos2d-x/pull/20483/files
 	// ½â¾öwindowsÏÂ¼ÓÔØµØÍ¼ÎÊÌâ£¡£¡£¡£¡£¡£¡£¡£¡
 	//********************************************************************
-	
-    // ÉèÖÃ³¡¾°ÈİÆ÷µÄ´óĞ¡Îª´°¿Ú´óĞ¡
-    //this->setContentSize(size);
+
+	// ÉèÖÃ³¡¾°ÈİÆ÷µÄ´óĞ¡Îª´°¿Ú´óĞ¡
+	//this->setContentSize(size);
 	// Ëõ·ÅÍßÆ¬µØÍ¼£¬Ê¹ÆäÌîÂúÕû¸öÆÁÄ»
 	_tileMap->setScaleX(screenSize.width / _tileMap->getContentSize().width);
-    _tileMap->setScaleY(screenSize.height / _tileMap->getContentSize().height);
+	_tileMap->setScaleY(screenSize.height / _tileMap->getContentSize().height);
 	// °ÑµØÍ¼ÃªµãºÍÎ»ÖÃ¶¼ÉèÖÃÎªÔ­µã£¬Ê¹µØÍ¼×óÏÂ½ÇÓëÆÁÄ»×óÏÂ½Ç¶ÔÆë
 	_tileMap->setAnchorPoint(Vec2::ZERO);
 	_tileMap->setPosition(Vec2::ZERO);
@@ -203,14 +206,15 @@ void GameScene::onMouseDown(EventMouse* event)
 			TouchLand(event);
 	}
 	else if (isTurretAble[mapX][mapY] != 0 && isTurretAble[mapX][mapY] != 1) {
-		if(!b)//ÕâÑù·ÀÖ¹ÔÚ½¨ÔìËşµÄÊ±ºòÎó´¥ÅÔ±ßµÄËş
+		if (!b)//ÕâÑù·ÀÖ¹ÔÚ½¨ÔìËşµÄÊ±ºòÎó´¥ÅÔ±ßµÄËş
 			TouchTower(event);
 	}
-	
+
 
 }
 
-void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±ßÔÙµãÓÒ±ß£¬ÔÙµãÓÒ±ßµÄ¿ÕµØ£¬²»Òª¼ûËû£¬ÔÙµãÓÒ±ßµÄ¿ÕµØ£¬»á³öÏÖtouchlayer¿Õ(×î½üÃ»ÓĞ·¢ÏÖ
+void GameScene::TouchLand(EventMouse* event) {
+	//***************½¨Á½¸öËş£¬ÏÈµã×ó±ßÔÙµãÓÒ±ß£¬ÔÙµãÓÒ±ßµÄ¿ÕµØ£¬²»Òª¼ûËû£¬ÔÙµãÓÒ±ßµÄ¿ÕµØ£¬»á³öÏÖtouchlayer¿Õ(×î½üÃ»ÓĞ·¢ÏÖ
 
 
 	// »ñÈ¡Êó±êµã»÷µÄ×ø±ê
@@ -237,10 +241,10 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 	//»ñÈ¡ĞÂµÄ´¥Ãş²ãºÍ¼àÌıÆ÷
 	auto touch_layer = getTouchLayer();
 	auto touch_listener = getTouchListener();
-	
+
 	//½«ĞÂµÄ´¥Ãş²ãÌí¼Óµ½³¡¾°µ±ÖĞ
-	if(!b)
-	this->addChild(touch_layer,10);
+	if (!b)
+		this->addChild(touch_layer, 10);
 
 
 	//´´½¨½¨ÔìÍ¼±ê¾«Áé
@@ -250,9 +254,9 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 	Sprite* TB_Not = Sprite::create("CarrotGuardRes/Towers/TBottle/NotBuy.png");
 	Sprite* TFan_Not = Sprite::create("CarrotGuardRes/Towers/TFan/TFan_NotBuy.png");
 	Sprite* TSun_Not = Sprite::create("CarrotGuardRes/Towers/TSun/TSun_NotBuy.png");
-	
+
 	//¶¨ÒåÈıÖÖ·ÀÓùËşµÄ½¨Ôì³É±¾
-	int TB_Cost,  TFan_Cost,  TSun_Cost;
+	int TB_Cost{}, TFan_Cost{}, TSun_Cost{};
 
 	if (!b) {
 		//ÓÉµØÍ¼×ø±êÔÙ×ª»¯ÎªÆÁÄ»×ø±ê£¬±£Ö¤Í¬Ò»µØÍ¼×ø±ê½¨ÔìÊ±ÆÁÄ»×ø±êÏàÍ¬
@@ -276,7 +280,7 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 			}
 			count++;
 		}
-		
+
 		//¸ù¾İµ±Ç°µÄ½ğ±ÒÇé¿öÀ´ÉèÖÃ½¨Ôì·ÀÓùËşµÄÍ¼±ê
 		if (_goldValue >= TB_Cost) {//******************Ê±²»Ê±»áËµÃ»ÓĞ³õÊ¼»¯ÄÚ´æ
 			TB_Can->setPosition(screenPos.x - _screenWidth * 0.05, screenPos.y);
@@ -342,7 +346,7 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
 
 		//ÔÚÕâÀïTBÖ¸´ú¡°¿ÉÒÔ½¨ÔìÍ¼±ê¡±Èç¹û²»´æÔÚ£¬¾ÍËµÃ÷²»¿ÉÒÔ½¨Ôì£¬Îª¼Ù¡£Èç¹û´æÔÚ£¬ÇÒµã»÷µ½¸ÃÍ¼±êµÄ·¶Î§ÄÚÔòÎªÕæ¡£
-		if ((TB)&&TB->getBoundingBox().containsPoint(screenPos)) {
+		if ((TB) && TB->getBoundingBox().containsPoint(screenPos)) {
 			//½¨Ôì¶ÔÓ¦µÄ·ÀÓùËş
 			BuildTower(buildTower, 1);
 			//ÒÆ³ı×îºóÉèÖÃµÄlisenner£¬·ÀÖ¹¶à¸ölisennerÏà»¥¸ÉÈÅ
@@ -354,14 +358,14 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 			//ÒÆ³ı´¥Ãş¼àÌıÆ÷
 			removeTouchListener();
 		}
-		else if ((TSun)&&TSun->getBoundingBox().containsPoint(screenPos)) {
+		else if ((TSun) && TSun->getBoundingBox().containsPoint(screenPos)) {
 			BuildTower(buildTower, 2);
 			_eventDispatcher->removeEventListener(touch_listener);
 			this->removeChild(touch_layer);
 			removeTouchLayer();
 			removeTouchListener();
 		}
-		else if ((TFan)&&TFan->getBoundingBox().containsPoint(screenPos)) {
+		else if ((TFan) && TFan->getBoundingBox().containsPoint(screenPos)) {
 			BuildTower(buildTower, 3);
 			_eventDispatcher->removeEventListener(touch_listener);
 			this->removeChild(touch_layer);
@@ -369,7 +373,7 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 			removeTouchListener();
 		}
 		//Èç¹ûµã»÷µ½Èı¸ö¡°¿ÉÒÔ½¨Ôì¡±Í¼±êÖ®ÍâµÄµØ·½£¬ÔòÏú»Ù½¨Ôì½çÃæ
-		else  {
+		else {
 			_eventDispatcher->removeEventListener(touch_listener);
 			this->removeChild(touch_layer);
 			removeTouchLayer();
@@ -377,10 +381,10 @@ void GameScene::TouchLand(EventMouse* event) {//***************½¨Á½¸öËş£¬ÏÈµã×ó±
 		}
 		//±íÊ¾½¨Ôì½çÃæÒÑÏú»Ù
 		setHasBuild(0);
-	};
-	if(!b)
-	_eventDispatcher->addEventListenerWithSceneGraphPriority(touch_listener, this);
-	
+		};
+	if (!b)
+		_eventDispatcher->addEventListenerWithSceneGraphPriority(touch_listener, this);
+
 }
 
 void GameScene::BuildTower(EventMouse* event, int numTower) {
@@ -399,16 +403,17 @@ void GameScene::BuildTower(EventMouse* event, int numTower) {
 
 	if (isTurretAble[mapX][mapY] == 0) {
 		// ´ú±íµ±Ç°Î»ÖÃÉÏÊÇÅÚËş
-		isTurretAble[mapX][mapY] = 1 + numTower * 10; 
+		isTurretAble[mapX][mapY] = 1 + numTower * 10;
 
 		//±éÀú»ñµÃµ±Ç°ÅÚËşÖÖÀàµÄname
-		auto turretData = *(_turretDatas.begin());
+		TurretData* turretData = nullptr;
 		std::string name;
 		int count = 1;
-		for (const auto& turretData : _turretDatas) {
+		for (const auto& temp : _turretDatas) {
 			if (count >= numTower) {
-				name = (turretData->getName());
-				buildCost= (turretData->getCost1());
+				name = (temp->getName());
+				buildCost = (temp->getCost1());
+				turretData = temp;
 				break;
 			}
 			count++;
@@ -416,12 +421,16 @@ void GameScene::BuildTower(EventMouse* event, int numTower) {
 
 
 		Turret* turret;
-		if (numTower != 2)
-			turret = Turret::createWithSpriteFrameName(name, 1);
-		else
+		if (numTower == 1) {
+			turret = Turret_TB::createWithSpriteFrameName(name, 1);
+		}
+		else if (numTower == 2) {
 			turret = Turret_TSun::createWithSpriteFrameName(name, 1);
+		}
+		else {
+			turret = Turret_TFan::createWithSpriteFrameName(name, 1);
+		}
 		_goldValue -= buildCost;//****************************************************Ê±²»Ê±ËµÃ»ÓĞ³õÊ¼»¯ÄÚ´æ
-		//update(0);//²»ÖªµÀupdateµÄ²ÎÊıÓĞÃ»ÓĞÓÃ
 		turret->setCost1(turretData->getCost1());
 		turret->setCost2(turretData->getCost2());
 		turret->setCost3(turretData->getCost3());
@@ -432,6 +441,7 @@ void GameScene::BuildTower(EventMouse* event, int numTower) {
 		turret->setName(name);
 		screenPos = TMXPosToLocation(mapPos);
 		turret->setPosition(screenPos);
+		//
 		turret->setTag(mapX * 1000 + mapY);
 		turret->init();
 		this->addChild(turret, 10);
@@ -482,7 +492,6 @@ void GameScene::TouchTower(EventMouse* event) {//*******************´ÓÓÒÍù×óÉú³É
 	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
 	currentRange = currentTower->getRange();
 	currentName = currentTower->getName();
-	CCLOG("currentname: %s", currentName.c_str());//******************************************logÀï²âÊÔ
 	currentGrade = isTurretAble[mapX][mapY] % 10;
 
 	switch (currentGrade) {
@@ -492,7 +501,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************´ÓÓÒÍù×óÉú³É
 	case 2:
 		currentCost = currentTower->getCost3();
 		break;
-	default :
+	default:
 		currentCost = -1;
 		break;
 	}
@@ -535,7 +544,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************´ÓÓÒÍù×óÉú³É
 
 
 	Sprite* Circle, * UpgradeCan, * Sale;
-	Circle= (Sprite*)touch_layer->getChildByName("circle");
+	Circle = (Sprite*)touch_layer->getChildByName("circle");
 	UpgradeCan = (Sprite*)touch_layer->getChildByName("upgrade_can");
 	Sale = (Sprite*)touch_layer->getChildByName("sale");
 
@@ -545,16 +554,16 @@ void GameScene::TouchTower(EventMouse* event) {//*******************´ÓÓÒÍù×óÉú³É
 	}
 	setHasUpgrade(1);
 	EventMouse* buildTower = getBuildEvent();
-	touch_listener->onMouseDown = [this, Circle,UpgradeCan,Sale,&screenPos, mapPos, touch_layer, touch_listener, buildTower,currentCost](EventMouse* event) {
+	touch_listener->onMouseDown = [this, Circle, UpgradeCan, Sale, &screenPos, mapPos, touch_layer, touch_listener, buildTower, currentCost](EventMouse* event) {
 		// Èô°´ÏÂÎ»ÖÃÔÚµÚÒ»¸öÅÚËşÍ¼±êÄÚ
 
 		Vec2 clickPos = event->getLocation();
 		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
-		
+
 		if ((UpgradeCan) && UpgradeCan->getBoundingBox().containsPoint(screenPos)) {//¶ÌÂ·ÇóÖµÀ´ÅĞ¶ÏÊÇ·ñÎª¿ÉÒÔµã»÷°´Å¥
 			_eventDispatcher->removeEventListener(touch_listener);
 			UpgradeTower(buildTower);
-			_goldValue -= currentCost ;
+			_goldValue -= currentCost;
 			//update(0);
 			this->removeChild(touch_layer);
 			removeTouchLayer();
@@ -591,51 +600,13 @@ void GameScene::UpgradeTower(EventMouse* event) {
 	// ×ª»¯³ÉTMXµØÍ¼×ø±ê
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
 	// µØÍ¼ÉÏ¿ÉÒÔ½¨ÔìÊ±
-
-	// ÒÆ³ıÃûÎª"frame_name"µÄ¾«ÁéÖ¡
-	//cocos2d::SpriteFrameCache::getInstance()->removeSpriteFrameByName("TB");//******************ÔİÊ±Ã»ÓÃºÃÏñ
-
-
 	Turret* currentTower;
 	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
 	int currentGrade, currentBase;
 	currentGrade = isTurretAble[mapX][mapY] % 10;
 	currentBase = isTurretAble[mapX][mapY] / 10;
-	
-	auto turretData = *(_turretDatas.begin());
-	std::string name;
-	int count = 1;
-	for (const auto& turretData : _turretDatas) {
-		if (count >= currentBase ) {
-			name = (turretData->getName());
-			break;
-		}
-		count++;
-	}
-	Turret* turret;
-	if(currentBase!=2)
-		turret = Turret::createWithSpriteFrameName(name, currentGrade + 1);
-	else
-		turret = Turret_TSun::createWithSpriteFrameName(name, currentGrade + 1);
+	currentTower->upgrade();
 	isTurretAble[mapX][mapY] += 1;
-	turret->setCost1(turretData->getCost1());
-	turret->setCost2(turretData->getCost2());
-	turret->setCost3(turretData->getCost3());
-	turret->setDamage(turretData->getDamage());
-	turret->setRange(turretData->getRange());
-
-	_currentTurrets.pushBack(turret);
-	turret->setName(name);
-	//ÓÉµØÍ¼×ø±êÔÙ×ª»¯ÎªÆÁÄ»×ø±ê£¬±£Ö¤Í¬Ò»µØÍ¼×ø±ê½¨ÔìÊ±ÆÁÄ»×ø±êÏàÍ¬
-	screenPos = TMXPosToLocation(mapPos);
-	turret->setPosition(screenPos);
-	turret->setTag(mapX * 1000 + mapY);
-	turret->init();
-	this->addChild(turret, 10);
-
-
-	this->removeChildByTag(mapX * 1000 + mapY);
-	delete currentTower;//*********************************************²»ÖªµÀÕâÖÖÓĞÃ»ÓĞÉ¾³ı
 
 }
 
@@ -655,12 +626,9 @@ void GameScene::SaleTower(EventMouse* event) {
 	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
 	int currentValue;
 	currentValue = currentTower->getCost1();//************************************Ã»ÕÒµ½³öÊÛ½ğ±Ò£¬ÏÈÄÃ½¨ÔìµÄÒ»°ëÀ´¶¥Ìæ
-	_goldValue += currentValue/2;
-	//update(0);
-
+	_goldValue += currentValue / 2;
 	isTurretAble[mapX][mapY] = 0;
 	this->removeChildByTag(mapX * 1000 + mapY);
-	delete currentTower;
 }
 
 
@@ -680,7 +648,7 @@ void GameScene::initLevel()
 
 	// »ñÈ¡ÕÏ°­²ã£¬ÉèÖÃÕÏ°­²ãÒş²Ø
 	_collidable = _tileMap->getLayer("collidable");
-	_collidable->setVisible(true);  
+	_collidable->setVisible(true);
 	// ËùÓĞ¹Ø¿¨µØÍ¼15*10£¡£¡£¡£¡£¡£¡
 	// ³õÊ¼»¯¿É½¨ÔìÅÚËşÊı×é
 	for (int i = 0; i < 15; i++) {
@@ -706,7 +674,7 @@ void GameScene::initLevel()
 	int carrotY = carrotValueMap.at("y").asInt();
 	// ´´½¨ÂÜ²·
 	_carrot = Sprite::createWithSpriteFrameName(StringUtils::format("Carrot_%d.png", carrotHealth));
-	_carrot ->setScale(0.5);
+	_carrot->setScale(0.5);
 	_carrot->setPosition(carrotX, carrotY);
 	_carrot->setName("carrot"); // Éè¸öÃû×Ö
 	_tileMap->addChild(_carrot, 2);
@@ -720,152 +688,399 @@ void GameScene::TopLabel()
 	// Èç¹ûÊÇÍßÆ¬µØÍ¼µÄ×Ó½Úµã»ùÓÚÆÁÄ»µÄsetposition »á½øĞĞËõ·Å£¬±»¼·³öÆÁÄ»£¡£¡£¡£¡
 	// 1. ÏÔÊ¾³öÏÖÁË¶àÉÙ²¨¹ÖÎï
 	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum), "Arial", 32);
-	_curNumberLabel->setColor(Color3B::RED);
+	_curNumberLabel->setColor(Color3B::YELLOW);
 	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.95);
 	//_tileMap->addChild(_curNumberLabel);
-	this->addChild(_curNumberLabel,2);
+	this->addChild(_curNumberLabel, 2);
 	// 2. Ò»¹²ÓĞ¶àÉÙ²¨¹ÖÎï
 	_numberLabel = Label::createWithSystemFont(StringUtils::format("/%dtimes", _monsterWave), "Arial", 32);
-	_numberLabel->setColor(Color3B::BLUE);
-	_numberLabel->setPosition(_screenWidth * 0.55, _screenHeight * 0.95);
-	this->addChild(_numberLabel,2);
+	_numberLabel->setColor(Color3B::WHITE);
+	_numberLabel->setPosition(_screenWidth * 0.53, _screenHeight * 0.95);
+	this->addChild(_numberLabel, 2);
 	// 3. ÓÒÉÏ½Ç½ğ±ÒÊıÁ¿
 	_goldLabel = Label::createWithSystemFont(StringUtils::format("%d", _goldValue), "Arial-BoldMT", 32);
 	_goldLabel->setColor(Color3B::WHITE);
 	_goldLabel->setPosition(_screenWidth * 0.125f, _screenHeight * 0.95);
 	//_goldLabel->enableOutline(Color4B::WHITE, 2);
-	this->addChild(_goldLabel,2);
-
-	
-
-
-	//Ìí¼ÓÓÎÏ·½çÃæÉÏ²¿µÄui£¨ÔÚµØÍ¼Êı¾İÄÇÀï¸ÄÁËÏÂ²»ÄÜµã»÷
+	this->addChild(_goldLabel, 2);
+	//Ìí¼ÓÓÎÏ·½çÃæÉÏ²¿µÄui
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
 	auto topImage = Sprite::create("CarrotGuardRes/UI/GameTop.png");
-	/*
-	auto speedButton = ui::Button::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
-
-	speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x+_screenWidth*0.3, _screenHeight + origin.y - _screenHeight * 0.055f));
-	//speedButton->addClickEventListener(CC_CALLBACK_1(GameScene::onSpeedButton, this));
-	float gameSpeed = getGameSpeed();
-	speedButton->addClickEventListener([this,speedButton,gameSpeed](cocos2d::Ref* sender) {
-		if (gameSpeed == 1.0) {
-			// µ±Ç°ÎªÕı³£ËÙ¶È£¬ÇĞ»»µ½¶ş±¶ËÙ
-			float deltaTime = 2 * gameSpeed;
-			setGameSpeed(2.0);
-			speedButton->loadTextures("CarrotGuardRes/UI/doubleSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
-		}
-		else {
-			// µ±Ç°Îª¶ş±¶ËÙ£¬ÇĞ»»µ½Õı³£ËÙ¶È
-			setGameSpeed(1.0);
-			speedButton->loadTextures("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png");
-		}
-		});
-		*/
-
-
+	//topImage->setPosition(Vec2(_screenWidth / 2 + origin.x, _screenHeight + origin.y - topImage->getContentSize().height + _screenHeight * 0.01f));
 	topImage->setPosition(Vec2(_screenWidth / 2 + origin.x, _screenHeight + origin.y - _screenHeight * 0.065f));
 	topImage->setScale(_screenWidth / topImage->getContentSize().width);
-	topImage->setOpacity(255);
 	this->addChild(topImage, 1);
 
 
-	auto menu = Menu::create();
-	menu->setPosition(Vec2::ZERO);
-	this->addChild(menu, 1);
-
-	auto speedButton = MenuItemImage::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png", CC_CALLBACK_1(GameScene::onSpeedButton, this));
-	if (speedButton != nullptr){
-		speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.3, _screenHeight + origin.y - _screenHeight * 0.055f));
-		menu->addChild(speedButton);
-	}
+	auto speedButton = Button::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
+	speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.23, _screenHeight + origin.y - _screenHeight * 0.055f));
+	this->addChild(speedButton, 2);
+	speedButton->addClickEventListener(CC_CALLBACK_1(GameScene::onSpeedButton, this));
 
 
-}
+	/*
+	speedButton->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
+		switch (type) {
+		case Button::TouchEventType::BEGAN:
+			break;
+		case Button::TouchEventType::MOVED:
+			break;
+		case Button::TouchEventType::CANCELED:
+			break;
+		case Button::TouchEventType::ENDED:
+			onSpeedButton();
+			break;
+		}
+		});*/
 
 
-void GameScene::onSpeedButton(Ref* sender)//*************************¿´¿´ÄÜ²»ÄÜÌåÄÚÊµÏÖ
-{
-	float gameSpeed = getGameSpeed();
-
-	if (gameSpeed==1.0) {
-		//¶ş±¶ËÙ
-		setGameSpeed(2.0);
-	}
-	else {
-		//Ò»±¶ËÙ
-		setGameSpeed(1.0);
-	}
-	//ÇĞ»»Í¼Æ¬
-	MenuItemImage* button = static_cast<MenuItemImage*>(sender);
-	if (gameSpeed==2.0) {
-		button->setNormalImage(Sprite::create("CarrotGuardRes/UI/doubleSpeed.png"));
-		button->setSelectedImage(Sprite::create("CarrotGuardRes/UI/doubleSpeed.png"));
-	}
-	if (gameSpeed == 1.0) {
-		button->setNormalImage(Sprite::create("CarrotGuardRes/UI/normalSpeed.png"));
-		button->setSelectedImage(Sprite::create("CarrotGuardRes/UI/normalSpeed.png"));
-	}
+	auto pauseButton = Button::create("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/continueButton.png");
+	pauseButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.33, _screenHeight + origin.y - _screenHeight * 0.055f));
+	this->addChild(pauseButton, 2);
+	pauseButton->addClickEventListener(CC_CALLBACK_1(GameScene::onPauseButton, this));
+	
+	auto menuButton = Button::create("CarrotGuardRes/UI/gameMenuNormal.png", "CarrotGuardRes/UI/gameMenuSelected.png");
+	menuButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.43, _screenHeight + origin.y - _screenHeight * 0.055f));
+	this->addChild(menuButton,2);
+	menuButton->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
+		switch (type) {
+		case Button::TouchEventType::BEGAN:
+			break;
+		case Button::TouchEventType::MOVED:
+			break;
+		case Button::TouchEventType::CANCELED:
+			break;
+		case Button::TouchEventType::ENDED:
+			onMenuButton();
+			break;
+		}
+		});
+		
 }
 
 
 void GameScene::CountDown()
 {
-	Label* label1 = Label::createWithSystemFont("1", "Arial-BoldMT", 150);
-	Label* label2 = Label::createWithSystemFont("2", "Arial-BoldMT", 150);
-	Label* label3 = Label::createWithSystemFont("3", "Arial-BoldMT", 150);
-	label1->setColor(Color3B::BLUE);
-	label2->setColor(Color3B::BLUE);
-	label3->setColor(Color3B::BLUE);
-	label1->setPosition(_screenWidth / 2, _screenHeight / 2);
-	label2->setPosition(_screenWidth / 2, _screenHeight / 2);
-	label3->setPosition(_screenWidth / 2, _screenHeight / 2);
-	
-	// ÉèÖÃlabel²»ÏÔÊ¾
-	label1->setVisible(false);
-	label2->setVisible(false);
-	label3->setVisible(false);
-	
-	this->addChild(label1,2);
-	this->addChild(label2,2);
-	this->addChild(label3,2);
+
+	auto countBackground = Sprite::create("CarrotGuardRes/UI/countBackground.png");
+	auto count1 = Sprite::create("CarrotGuardRes/UI/countOne.png");
+	auto count2 = Sprite::create("CarrotGuardRes/UI/countTwo.png");
+	auto count3 = Sprite::create("CarrotGuardRes/UI/countThree.png");
+	Label* count0 = Label::createWithSystemFont("GO", "Arial-BoldMT", 100);
+
+	countBackground->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count1->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count2->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count3->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count0->setPosition(_screenWidth / 2, _screenHeight / 2);
+
+	countBackground->setVisible(false);
+	count1->setVisible(false);
+	count2->setVisible(false);
+	count3->setVisible(false);
+	count0->setVisible(false);
+
+	this->addChild(countBackground, 2);
+	this->addChild(count1, 2);
+	this->addChild(count2, 2);
+	this->addChild(count3, 2);
+	this->addChild(count0, 2);
 
 	// ÉèÖÃµ¹Êısequence¶¯×÷
 	auto countdown = Sequence::create(CallFunc::create([=] {
-		label3->setVisible(true);
+		countBackground->setVisible(true);
+		count3->setVisible(true);
 		}), DelayTime::create(1), CallFunc::create([=] {
-			this->removeChild(label3);
+			this->removeChild(count3);
 			}), CallFunc::create([=] {
-				label2->setVisible(true);
+				count2->setVisible(true);
 				}), DelayTime::create(1), CallFunc::create([=] {
-					this->removeChild(label2);
+					this->removeChild(count2);
 					}), CallFunc::create([=] {
-						label1->setVisible(true);
+						count1->setVisible(true);
 						}), DelayTime::create(1), CallFunc::create([=] {
-							this->removeChild(label1);
-							// ÓÎÏ·Ö÷Ñ­»·
-							scheduleUpdate();
-							}) ,NULL);
+							this->removeChild(count1);
+							count0->setVisible(true); 
+							}), DelayTime::create(1), CallFunc::create([=] {
+								this->removeChild(count0);
+								this->removeChild(countBackground);
+								// ÓÎÏ·Ö÷Ñ­»·
+								scheduleUpdate();
+								}), NULL);
 
 
 	this->runAction(countdown);
 }
 
+void GameScene::onSpeedButton(Ref* pSender) {
+
+	// »ñÈ¡¼ÓËÙ°´Å¥
+	auto button = static_cast<ui::Button*>(pSender);
+	// ÔÚÕâÀï¸Ä±ä°´Å¥µÄÑùÊ½
+	int isDoubleSpeed = getIsDoubleSpeed();
+	// µã»÷Ê±ÊÇ¶ş±¶ËÙ
+	if (isDoubleSpeed) {
+		button->loadTextures("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png");
+		setIsDoubleSpeed(0);
+	}
+	// µã»÷Ê±ÊÇÕı³£±¶ËÙ
+	else {
+		button->loadTextures("CarrotGuardRes/UI/doubleSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
+		setIsDoubleSpeed(1);
+	}
+
+	// ÕâÀïÔÙ´Î»ñÈ¡Ò»ÏÂ·½±ãÏÂÃæµÄÂß¼­Àí½â
+	isDoubleSpeed = getIsDoubleSpeed();
+	//ÏÂÃæ½øĞĞ¶ş±¶ËÙ´¦Àí
+	if (isDoubleSpeed) {
+		for (auto monster : _currentMonsters) {//*******ÔİÊ±»¹Ã»ÓĞÊµÏÖ
+			monster->setSpeed(10);
+		}
+		for (auto turret : _currentTurrets) {
+			turret->setShootFreq(0.1);//*******ÔİÊ±Ò²Ã»ÓĞÊµÏÖ
+		}
+	}
+	// »Ö¸´Õı³£±¶ËÙÀí½â
+	else {
+		for (auto monster : _currentMonsters) {
+			monster->setSpeed(1);
+		}
+		for (auto turret : _currentTurrets) {
+			turret->setShootFreq(0.5);
+		}
+	}
+
+
+
+}
+
+void GameScene::onPauseButton(Ref* pSender) {
+	// »ñÈ¡ÔİÍ£°´Å¥
+	auto button = static_cast<ui::Button*>(pSender);
+	int isPaused = getIsPaused();
+	// µã»÷Ê±ÊÇÔİÍ£
+	if (isPaused) {
+		button->loadTextures("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/pauseButton.png");
+		// »Ö¸´ÓÎÏ·½øĞĞ
+		this->scheduleUpdate();
+		Director::getInstance()->resume();
+
+		this->removeChildByName("pauseTop");
+
+		setIsPaused(0);
+	}
+	// µã»÷Ê±ÊÇÕı³£
+	else {
+		button->loadTextures("CarrotGuardRes/UI/continueButton.png", "CarrotGuardRes/UI/continueButton.png");
+
+		// Ìí¼Ó¶¥²¿ÔİÍ£±êÊ¶
+		auto pauseTop = Sprite::create("CarrotGuardRes/UI/pausing.png");
+		pauseTop->setName("pauseTop");
+		pauseTop->setPosition(Vec2(_screenWidth / 2, _screenHeight*0.945));
+		pauseTop->setScale(2.0f);
+		this->addChild(pauseTop, 10);
+
+		//Í£Ö¹ÓÎÏ·½øĞĞ
+		this->unscheduleUpdate();
+		Director::getInstance()->pause();
+		setIsPaused(1);
+	}
+
+}
+
+void GameScene::onMenuButton() {
+
+	//Í£Ö¹ÓÎÏ·½øĞĞ
+	this->unscheduleUpdate();
+	//Í£Ö¹ËùÓĞ½ÚµãµÄ¶¯×÷
+	this->pause();//Í£Ö¹µã»÷ÊÂ¼ş
+	Director::getInstance()->pause();// Í£Ö¹¶¯×÷ÊÂ¼ş
+
+
+	auto menuLayer = LayerColor::create(Color4B(0, 0, 0,150));
+	menuLayer->setPosition(Vec2::ZERO);
+	this->addChild(menuLayer, 10);
+
+
+	auto menuBackground = Sprite::create("CarrotGuardRes/UI/gameMenu.png");
+	menuBackground->setPosition(Vec2(_screenWidth / 2 , _screenHeight / 2 ));
+	menuBackground->setScale(1.5f);
+	menuLayer->addChild(menuBackground, 0);
+
+	auto menu = Menu::create();
+	menu->setPosition(Vec2::ZERO);
+	menuLayer->addChild(menu,1);
+
+	auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
+	continueButton->setPosition(Vec2(_screenWidth*0.495,_screenHeight*0.649));
+	continueButton->setScale(1.5);
+	auto restartButton = MenuItemImage::create("CarrotGuardRes/UI/restartNormal.png", "CarrotGuardRes/UI/restartSelected.png");
+	restartButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.51));
+	restartButton->setScale(1.5);
+	auto chooseButton = MenuItemImage::create("CarrotGuardRes/UI/chooseLevelNormal.png", "CarrotGuardRes/UI/chooseLevelSelected.png");
+	chooseButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.375));
+	chooseButton->setScale(1.5);
+
+
+	continueButton->setCallback([this, menuLayer](Ref* psender) {
+		this->removeChild(menuLayer);
+		// »Ö¸´ÓÎÏ·½øĞĞ
+		this->scheduleUpdate();
+		// »Ö¸´ËùÓĞ½ÚµãµÄ¶¯×÷
+		this->resume();
+		Director::getInstance()->resume();
+		});
+
+	restartButton->setCallback([this, menuLayer](Ref* psender) {
+
+		auto gameScene = GameScene::createSceneWithLevel(1);
+		Director::getInstance()->replaceScene(gameScene);
+		this->removeChild(menuLayer);
+		auto runningScene = Director::getInstance()->getRunningScene();
+		auto gameLayer = runningScene->getChildByName("layer");
+		Director::getInstance()->resume();
+		});
+
+
+	chooseButton->setCallback([this, menuLayer](Ref* psender) {
+		auto skylineScene = SkyLineSelection::createScene();
+		Director::getInstance()->replaceScene(skylineScene);
+		auto runningScene = Director::getInstance()->getRunningScene();
+		auto gameLayer = runningScene->getChildByName("layer");
+		this->removeChild(menuLayer);
+		});
+
+
+	menu->addChild(continueButton, 1);
+	menu->addChild(chooseButton, 1);
+	menu->addChild(restartButton, 1);
+
+	auto listener = EventListenerTouchOneByOne::create();
+	listener->setSwallowTouches(true);
+	listener->onTouchBegan = [menuLayer](Touch* touch, Event* event) {
+		return true;
+		};
+
+
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, menuLayer);
+
+}
+
+void GameScene::gameOver(int isWin) {
+	//Í£Ö¹ÓÎÏ·½øĞĞ
+	this->unscheduleUpdate();
+	//Í£Ö¹ËùÓĞ½ÚµãµÄ¶¯×÷
+	this->pause();
+
+	auto menuLayer = LayerColor::create(Color4B(0, 0, 0, 150));
+	menuLayer->setPosition(Vec2::ZERO);
+	this->addChild(menuLayer, 10);
+
+	auto menu = Menu::create();
+	menu->setPosition(Vec2::ZERO);
+	menuLayer->addChild(menu, 1);
+
+	// ÓÎÏ·Ê¤Àû
+	if (isWin) {
+		auto gameWinBackground = Sprite::create("CarrotGuardRes/UI/WinGame.png");
+		gameWinBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
+		gameWinBackground->setScale(1.5f);
+		menuLayer->addChild(gameWinBackground, 0);
+
+		auto goldenCarrot= Sprite::create("CarrotGuardRes/UI/goldenCarrot.png");
+		goldenCarrot->setPosition(Vec2(_screenWidth *0.493, _screenHeight*0.7));
+		menuLayer->addChild(goldenCarrot, 0);
+
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum-1), "Arial", 32);
+		_curNumberLabel->setColor(Color3B::YELLOW);
+		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
+		Label* loseWordLeft = Label::createWithSystemFont("you fought off", "Arial-BoldMT", 27);
+		loseWordLeft->setPosition(_screenWidth * 0.33, _screenHeight * 0.54);
+		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial-BoldMT", 30);
+		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.54);
+
+		this->addChild(_curNumberLabel, 10);
+		this->addChild(loseWordLeft, 10);
+		this->addChild(loseWordRight, 10);
+
+		auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
+		continueButton->setPosition(Vec2(_screenWidth * 0.613, _screenHeight * 0.375));
+		continueButton->setScale(1.38);
+
+		continueButton->setCallback([this, menuLayer](Ref* psender) {
+			//Ğ´½øÈëlevel2µÄ²¿·Ö
+			});
+		menu->addChild(continueButton, 1);
+	}
+	// ÓÎÏ·Ê§°Ü
+	else {
+		auto gameLoseBackground = Sprite::create("CarrotGuardRes/UI/LoseGame.png");
+		gameLoseBackground->setPosition(Vec2(_screenWidth / 2+ _screenWidth*0.01, _screenHeight / 2+ _screenHeight*0.015));
+		gameLoseBackground->setScale(1.5f);
+		menuLayer->addChild(gameLoseBackground, 0);
+
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum-1), "Arial", 32);// ÔİÊ±Ã»¸ãcurrnumÎªÊ²Ã´»á´ó1£¬ËùÒÔÏÈ-1
+		_curNumberLabel->setColor(Color3B::YELLOW);
+		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
+		Label* loseWordLeft = Label::createWithSystemFont("you fought off", "Arial-BoldMT", 27);
+		loseWordLeft->setPosition(_screenWidth * 0.33, _screenHeight * 0.54);
+		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial-BoldMT", 30);
+		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.54);
+
+		this->addChild(_curNumberLabel, 10);
+		this->addChild(loseWordLeft, 10);
+		this->addChild(loseWordRight, 10);
+
+		auto againButton = MenuItemImage::create("CarrotGuardRes/UI/AgainNormal.png", "CarrotGuardRes/UI/AgainSelected.png");
+		againButton->setPosition(Vec2(_screenWidth * 0.61, _screenHeight * 0.37));
+		againButton->setScale(0.9);
+
+		againButton->setCallback([this, menuLayer](Ref* psender) {
+			auto gameScene = GameScene::createSceneWithLevel(1);
+			Director::getInstance()->replaceScene(gameScene);
+			this->removeChild(menuLayer);
+			auto runningScene = Director::getInstance()->getRunningScene();
+			auto gameLayer = runningScene->getChildByName("layer");
+			});
+		menu->addChild(againButton, 1);
+
+	}
+
+
+
+	auto chooseButton = MenuItemImage::create("CarrotGuardRes/UI/chooseLevelNormal.png", "CarrotGuardRes/UI/chooseLevelSelected.png");
+	chooseButton->setPosition(Vec2(_screenWidth * 0.38, _screenHeight * 0.37));
+	chooseButton->setScale(1.4);
+
+
+
+	chooseButton->setCallback([this, menuLayer](Ref* psender) {
+		auto skylineScene = SkyLineSelection::createScene();
+		Director::getInstance()->replaceScene(skylineScene);
+		auto runningScene = Director::getInstance()->getRunningScene();
+		auto gameLayer = runningScene->getChildByName("layer");
+		this->removeChild(menuLayer);
+		});
+
+
+
+	menu->addChild(chooseButton, 1);
+
+}
 
 // TMX point ->Screen
 // µØÍ¼¸ñ×Ó×ø±ê×ª»¯³ÉÆÁÄ»×ø±ê
 Vec2 GameScene::TMXPosToLocation(Vec2 pos)
 {   // ×¢Òâ * _tileMap->getScale() £¡£¡£¡
-	int x = (int)(pos.x * (_tileMap->getTileSize().width*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()));
-	float pointHeight = _tileMap->getTileSize().height*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR();
+	int x = (int)(pos.x * (_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()));
+	float pointHeight = _tileMap->getTileSize().height * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR();
 	int y = (int)((_tileMap->getMapSize().height * pointHeight) - (pos.y * pointHeight));
 	// ÏÖÔÚÕâ¸ö×ø±ê×ª»¯ÊÇ×ªµ½×óÉÏ½Çeg: (0,0)->(0,640)   // windowÓÎÏ·ÆÁÄ»ÉèÖÃ(960,640)
 	// ÎÒÃÇÔÙ½«Æä×ª»¯³É¸ñ×ÓµÄÖĞĞÄ
 	x += (_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()) / 2.0;
-	y-=(_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()) / 2.0;
+	y -= (_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR()) / 2.0;
 #ifdef DEBUG
-	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
+	CCLOG("x: %lf , y: %lf ", pos.x, pos.y);
 	CCLOG("Screen.x: %d, Screen.y: %d", x, y);
 #endif // DEBUG
 
@@ -881,14 +1096,14 @@ Vec2 GameScene::TMXPosToLocation(Vec2 pos)
 // ÆÁÄ»×ø±ê×ª»¯³ÉµØÍ¼¸ñ×Ó×ø±ê
 Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 {
-	int x = (int)(pos.x) / (_tileMap->getTileSize().width*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR());
-	float pointHeight = _tileMap->getTileSize().height*_tileMap->getScale() / CC_CONTENT_SCALE_FACTOR(); 
+	int x = (int)(pos.x) / (_tileMap->getTileSize().width * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR());
+	float pointHeight = _tileMap->getTileSize().height * _tileMap->getScale() / CC_CONTENT_SCALE_FACTOR();
 
 	//int y = (int)((_tileMap->getMapSize().height*_tileMap->getScale() * pointHeight-pos.y )/ pointHeight);
 	int y = (int)((screenSize.height - pos.y) / pointHeight);
 
 #ifdef DEBUG
-	CCLOG("x: %lf , y: %lf ",pos.x,pos.y);
+	CCLOG("x: %lf , y: %lf ", pos.x, pos.y);
 	CCLOG("TMX.x: %d, TMX.y: %d", x, y);
 #endif // DEBUG
 	return Vec2(x, y);
@@ -899,44 +1114,48 @@ Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 // Éú³É¹ÖÎï
 // Ã¿²¨¹ÖÎï5.0s£¬Ã¿¸ö¹ÖÉú³É¼ä¸ô0.5s
 void GameScene::generateMonsters() {
-    _currNum = 0;
+	_currNum = 0;
 
-    this->schedule([=](float dt) {
+	this->schedule([=](float dt) {
 		_currNum++;
-        if (_currNum <=_monsterWave ) {
+		if (_currNum <= _monsterWave) {
 			_curNumberLabel->setString(StringUtils::format("%d", _currNum));
-            generateMonsterWave();
-            
-        } else {
-            unschedule("generateMonsters");
-        }
-		
-    }, 5.0f, "generateMonsters");
+			generateMonsterWave();
+
+			if (_currNum == _monsterWave)
+				setIsFinalWave(1);
+
+		}
+		else {
+			unschedule("generateMonsters");
+		}
+
+		}, 5.0f, "generateMonsters");
 }
 
 // µ÷ºÃÁËhhh,×¢ÒâmutableÔÚlambdaµÄÊ¹ÓÃ£¬¼°from++£¬×¢ÒâÃ¿´Îµ÷ÓÃµÄ»°lambdaÖĞµÄfrom¶¼»áÔÚÉÏÒ»´Î»ù´¡ÉÏ++£¬¶ø²»ÊÇ¹Ì¶¨µÄfrom+1£¬
 // Í¬Ê±Íâ²¿µÄfrom²»±ä£¬×¢ÒâÕâ¸öÓï·¨µã£¬
 void GameScene::generateMonsterWave() {
-    
-	int from = _everyWave[_currNum - 1];
+
+	//_monsterNum;
 	int end = _everyWave[_currNum];
-    this->schedule([=](float dt)mutable {
+	this->schedule([=](float dt)mutable {
 		int i = 0;
 		for (auto monsterData : _monsterDatas) {
-			if (i >= from) {
-				if (from  < end) {
+			if (i >= _monsterNum) {
+				if (_monsterNum < end) {
 
-					 auto monster = Monster::createWithSpriteFrameName(monsterData->getName());
+					auto monster = Monster::createWithSpriteFrameName(monsterData->getName());
 					_currentMonsters.pushBack(monster);
 					// ÃªµãÉèÎªÖĞĞÄ
 					monster->setAnchorPoint(Vec2(0.5f, 0.5f));
-					monster->setLifeValue(monsterData->getLifeValue());
+					monster->setMaxLifeValue(monsterData->getLifeValue());
 					monster->setGold(monsterData->getGold());
 					monster->setSpeed(monsterData->getSpeed());
 					monster->setPointPath(_pathPoints); // ´«µİÂ·¾¶¸ø¹ÖÎï
-					this->addChild(monster,8);
+					this->addChild(monster, 8);
 					monster->startMoving();
-					from++;
+					_monsterNum++;
 					break;
 				}
 				else {
@@ -945,7 +1164,7 @@ void GameScene::generateMonsterWave() {
 			}
 			i++;
 		}
-    }, 0.5f, "generateMonsterWave");
+		}, 0.5f, "generateMonsterWave");
 }
 
 // ÓĞ¹ÖÎïµ½´ïÖÕµã£¬¶ÔÂÜ²·Ôì³ÉÉËº¦
@@ -976,7 +1195,7 @@ Vector<Monster*>& GameScene::getMonsters() {
 
 void GameScene::update(float dt)
 {
-	
+
 	updateMonster();
 	// ÏÈ×¢ÊÍµô
 	updateGameState();
@@ -987,12 +1206,16 @@ void GameScene::updateMonster()
 	Vector<Monster*> monstersToRemove;
 	for (auto monster : _currentMonsters) {
 		// ÅĞ¶Ï¹ÖÎïÊÇ·ñ±»ÏûÃğ,Ôö¼Ó½ğ±Ò
+
 		if (monster->getLifeValue() <= 0) {
-			
+
 			_goldValue += monster->getGold();
 			monster->removeHP();//ÒÆ³ıÑªÌõ
 			monstersToRemove.pushBack(monster);
 			continue;
+		}
+		else {
+			monster->setHP();//¸üĞÂÑªÌõ
 		}
 		// ÅĞ¶Ï¹ÖÎïÊÇ·ñµ½´ïÖÕµã£¬¶ÔÂÜ²·Ôì³ÉÉËº¦
 		if (monster->getisLastPoint()) {
@@ -1012,17 +1235,39 @@ void GameScene::updateMonster()
 void GameScene::updateGameState()
 {
 	// ¸üĞÂ½ğ±Ò±êÇ©
-	_goldLabel ->setString(StringUtils::format("%d", _goldValue));
+	_goldLabel->setString(StringUtils::format("%d", _goldValue));
+
+
+	// Ôö¼Ó×îºóÒ»²¨¹ÖÎï¶¯»­
+	if (_currNum == _monsterWave&&getIsFinalWave()==1) {
+		auto finalWave = Sprite::create("CarrotGuardRes/UI/finalWave.png");
+		finalWave->setName("finalWave");
+		finalWave->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
+		finalWave->setScale(2.0f);
+		this->addChild(finalWave, 10);
+
+		// ´´½¨ÑÓ³Ù¶¯×÷ºÍÒÆ³ı½Úµã¶¯×÷µÄ×éºÏ¶¯×÷
+		auto delay = DelayTime::create(1.0f);
+		auto remove = RemoveSelf::create();
+		auto sequence = Sequence::create(delay, remove, nullptr);
+
+		// Ö´ĞĞ×éºÏ¶¯×÷
+		finalWave->runAction(sequence);
+		setIsFinalWave(0);
+	}
+
 	// ÅĞ¶ÏÓÎÏ·ÊÇ·ñ½áÊø£º³É¹¦»òÊ§°Ü
 	//==========´ıÍêÉÆ============
 	// Ê§°Ü
 	if (getCarrotHealth() <= 0) {
+		gameOver(0);
 		CCLOG("****************GAME OVER***************");
-		return ;
+		return;
 
 	}
 	// ³É¹¦
 	if (_monsterDeath >= _monsterAll) {
+		gameOver(1);
 		CCLOG("***************YOU WIN*******************");
 	}
 }

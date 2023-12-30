@@ -1,11 +1,14 @@
 {
-  "tileFile": "CarrotGuardRes/LeveL_1.tmx", 
-  "monsterAll": 15,                         
-  "monsterWave":3,                         
-  "everyWave":[                            
-    0,4,9,15               
+  "tileFile": "CarrotGuardRes/LeveL_1.tmx",
+  "monsterAll": 15,
+  "monsterWave": 3,
+  "everyWave": [
+    0,
+    4,
+    9,
+    15
   ],
-  "monsters": [                             
+  "monsters": [
     {
       "name": "Monster_2.png",
       "lifeValue": 10,
@@ -17,85 +20,85 @@
       "lifeValue": 5,
       "gold": 30,
       "speed": 1
-    },  
+    },
     {
       "name": "Monster_3.png",
       "lifeValue": 15,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_3.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    },    
+    },
     {
       "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
-    }  
+    }
   ],
   "turrets": [
     {
@@ -112,7 +115,7 @@
       "Cost2": 100,
       "Cost3": 150,
       "range": 100,
-      "damage": 5
+      "damage": 2
     },
     {
       "name": "TFan",

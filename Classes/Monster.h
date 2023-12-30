@@ -15,13 +15,15 @@ using namespace ui;
 // Monster类
 class Monster : public Sprite {
 private:
-	int _lifeValue=10;        // 生命值
+	float _lifeValue = 10;        // 生命值
+	float _maxLifeValue = 10;     // 最大生命值
 	LoadingBar* _HP;       // 进度条效果表示血条
-	float _HPInterval;     //  血条更新量
 	Vector<PointDelegate*> _pathPoints;   // 记录有效路径点
-	int _gold=10;         // 消灭怪物获得的金币
-	float _speed=1;        // 移动速度
+	int _gold = 10;         // 消灭怪物获得的金币
+	float _speed = 1;        // 移动速度
 	bool isLastPoint = false;  // 怪物到达终点？
+	// 用于保存进度
+	int _step = 0;   // 记录怪物走了几步
 
 public:
 	// 使用精灵帧创建
@@ -44,21 +46,27 @@ public:
 			return sprite;
 		}
 		CC_SAFE_DELETE(sprite);
-		return nullptr;		
+		return nullptr;
 	}
 
 	bool init();
 	// set get 
-	void setLifeValue(int lifeValue) {
+	void setLifeValue(float lifeValue) {
 		_lifeValue = lifeValue;
+	}
+	void setMaxLifeValue(float maxLifeValue) {
+		_lifeValue = maxLifeValue;
+		_maxLifeValue = maxLifeValue;
 	}
 	int getLifeValue() {
 		return _lifeValue;
 	}
 
 	void setHP() {
-		float percent = static_cast<float>(_lifeValue-_HPInterval) / _lifeValue * 100.0f;
-		_HP->setPercent(percent);
+		if (_lifeValue > 0) {
+			float percent = _lifeValue / _maxLifeValue * 100.0f;
+			_HP->setPercent(percent);
+		}
 	}
 
 	void removeHP() {
@@ -71,19 +79,9 @@ public:
 	LoadingBar* getHP() {
 		return _HP;
 	}
-
-	void setHPInterval(float HPInterval) {
-		_HPInterval = HPInterval;
-	}
-	float getHPInterval() {
-		return _HPInterval;
-	}
-
-
-	void setPointPath(Vector<PointDelegate*> &pathPoints) {
+	void setPointPath(Vector<PointDelegate*>& pathPoints) {
 		_pathPoints = pathPoints;
 	}
-	// 无需get方法
 
 	// monster移动
 	void startMoving();
@@ -97,11 +95,13 @@ public:
 	void setSpeed(float speed) {
 		_speed = speed;
 	}
-
-
 	bool getisLastPoint() {
 		return isLastPoint;
 	}
+	int getStep() {
+		return _step;
+	}
+
 
 };
 
