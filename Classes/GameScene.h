@@ -48,6 +48,10 @@ protected:
 	Vector<Monster*> _currentMonsters;       // 场上现存的怪物
 	Vector<Turret*> _currentTurrets;         // 场上现存的炮塔
 	int _monsterDeath = 0;                   // 被摧毁的怪物，包括被打死的和到终点的
+	int _isDoubleSpeed = 0;                  // 标记当前是否开启二倍速
+	int _isPaused = 0;                       // 标记当前游戏是否暂停
+	int _isFinalWave = 0;                   // 标记当前游戏是否是最后一波怪物
+
 
 	// 顶部标签
 	Label* _numberLabel;                  // 显示怪物波数
@@ -74,7 +78,7 @@ public:
 	//
 	//~GameScene();
 	// 根据关卡编号创建游戏关卡场景
-	static Scene* createSceneWithLevel(int selectLevel);
+	static Scene* createSceneWithLevel(int selectLevel, int isSave);
 	// 关卡场景初始化
 	virtual bool init();
 	// 获取json关卡数据
@@ -83,6 +87,14 @@ public:
 	virtual void initLevel();
 	// 屏幕顶部标签
 	virtual void TopLabel();
+	// 游戏中的菜单选项
+	void onMenuButton();
+	// 游戏中的暂停按钮选项
+	void onPauseButton(Ref* pSender);
+	// 游戏中的二倍速选项
+	void onSpeedButton(Ref* pSender);
+	// 游戏结束
+	void gameOver(int isWin);
 
 	// 开始时倒计时，也可用于暂停后重新开始
 	void CountDown();
@@ -189,6 +201,28 @@ public:
 
 	EventListenerMouse* getTouchListener() {
 		return touchListener;
+	}
+	// 二倍速
+	void setIsDoubleSpeed(int option) {
+		_isDoubleSpeed = option;
+	}
+
+	int getIsDoubleSpeed() {
+		return _isDoubleSpeed;
+	}
+	// 暂停
+	void setIsPaused(int option) {
+		_isPaused = option;
+	}
+	int getIsPaused() {
+		return _isPaused;
+	}
+	// 最后一波
+	void setIsFinalWave(int option) {
+		_isFinalWave = option;
+	}
+	int getIsFinalWave() {
+		return _isFinalWave;
 	}
 	// 存档
 	void SaveGame();

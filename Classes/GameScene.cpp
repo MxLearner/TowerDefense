@@ -3,14 +3,15 @@
 #include"Turret_TB.h"
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
+#include"SkyLineSelection.h"
 #include <regex>
 using namespace ui;
 USING_NS_CC;
 
 static int currentLevel = 2;  // 当前关卡
-static int  IS_LOAD_SAVE_GAME = 0; // 是否加载存档
+static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
 
-static int IS_BEGAN_SERVER = 1;// 是否开启联机
+static int IS_BEGAN_SERVER = 0;// 是否开启联机
 
 #define DEBUG
 void GameScene::startServer()
@@ -26,10 +27,10 @@ void GameScene::startServer()
 }
 
 // 根据关卡编号创建游戏关卡场景
-Scene* GameScene::createSceneWithLevel(int selectLevel)
+Scene* GameScene::createSceneWithLevel(int selectLevel, int isSave)
 {   // 获得关卡编号
 	currentLevel = selectLevel;
-
+	IS_LOAD_SAVE_GAME = isSave;
 	auto scene = Scene::create();
 
 	auto layer = GameScene::create();
@@ -91,7 +92,10 @@ bool GameScene::init()
 	setTouchLayer(NULL);
 	createTouchListener();
 	setTouchListener(NULL);
-
+	//初始化二倍速标记
+	setIsDoubleSpeed(0);
+	//初始化最后一波的标记
+	setIsFinalWave(0);
 	return true;
 }
 void GameScene::LoadLevelData()
@@ -512,7 +516,6 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
 	currentRange = currentTower->getRange();
 	currentName = currentTower->getName();
-	CCLOG("currentname: %s", currentName.c_str());//******************************************log里测试
 	currentGrade = isTurretAble[mapX][mapY] % 10;
 
 	switch (currentGrade) {
@@ -710,14 +713,14 @@ void GameScene::TopLabel()
 	// 如果是瓦片地图的子节点基于屏幕的setposition 会进行缩放，被挤出屏幕！！！！
 	// 1. 显示出现了多少波怪物
 	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", std::min(_currNum, _monsterWave)), "Arial", 32);
-	_curNumberLabel->setColor(Color3B::RED);
+	_curNumberLabel->setColor(Color3B::YELLOW);
 	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.95);
 	//_tileMap->addChild(_curNumberLabel);
 	this->addChild(_curNumberLabel, 2);
 	// 2. 一共有多少波怪物
 	_numberLabel = Label::createWithSystemFont(StringUtils::format("/%dtimes", _monsterWave), "Arial", 32);
-	_numberLabel->setColor(Color3B::BLUE);
-	_numberLabel->setPosition(_screenWidth * 0.55, _screenHeight * 0.95);
+	_curNumberLabel->setColor(Color3B::YELLOW);
+	_numberLabel->setPosition(_screenWidth * 0.53, _screenHeight * 0.95);
 	this->addChild(_numberLabel, 2);
 	// 3. 右上角金币数量
 	_goldLabel = Label::createWithSystemFont(StringUtils::format("%d", _goldValue), "Arial-BoldMT", 32);
@@ -733,29 +736,82 @@ void GameScene::TopLabel()
 	topImage->setScale(_screenWidth / topImage->getContentSize().width);
 	this->addChild(topImage, 1);
 
+	// 二倍速按钮
+	auto speedButton = Button::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
+	speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.23, _screenHeight + origin.y - _screenHeight * 0.055f));
+	this->addChild(speedButton, 2);
+	speedButton->addClickEventListener(CC_CALLBACK_1(GameScene::onSpeedButton, this));
+
+
+	/*
+	speedButton->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
+		switch (type) {
+		case Button::TouchEventType::BEGAN:
+			break;
+		case Button::TouchEventType::MOVED:
+			break;
+		case Button::TouchEventType::CANCELED:
+			break;
+		case Button::TouchEventType::ENDED:
+			onSpeedButton();
+			break;
+		}
+		});*/
+
+		// 暂停按钮
+	auto pauseButton = Button::create("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/continueButton.png");
+	pauseButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.33, _screenHeight + origin.y - _screenHeight * 0.055f));
+	this->addChild(pauseButton, 2);
+	pauseButton->addClickEventListener(CC_CALLBACK_1(GameScene::onPauseButton, this));
+
+	// 菜单按钮
+	auto menuButton = Button::create("CarrotGuardRes/UI/gameMenuNormal.png", "CarrotGuardRes/UI/gameMenuSelected.png");
+	menuButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.43, _screenHeight + origin.y - _screenHeight * 0.055f));
+	this->addChild(menuButton, 2);
+	menuButton->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
+		switch (type) {
+		case Button::TouchEventType::BEGAN:
+			break;
+		case Button::TouchEventType::MOVED:
+			break;
+		case Button::TouchEventType::CANCELED:
+			break;
+		case Button::TouchEventType::ENDED:
+			onMenuButton();
+			break;
+		}
+		});
+
+
 }
 
 
 void GameScene::CountDown()
 {
-	Label* label1 = Label::createWithSystemFont("1", "Arial-BoldMT", 150);
-	Label* label2 = Label::createWithSystemFont("2", "Arial-BoldMT", 150);
-	Label* label3 = Label::createWithSystemFont("3", "Arial-BoldMT", 150);
-	label1->setColor(Color3B::BLUE);
-	label2->setColor(Color3B::BLUE);
-	label3->setColor(Color3B::BLUE);
-	label1->setPosition(_screenWidth / 2, _screenHeight / 2);
-	label2->setPosition(_screenWidth / 2, _screenHeight / 2);
-	label3->setPosition(_screenWidth / 2, _screenHeight / 2);
+	auto countBackground = Sprite::create("CarrotGuardRes/UI/countBackground.png");
+	auto count1 = Sprite::create("CarrotGuardRes/UI/countOne.png");
+	auto count2 = Sprite::create("CarrotGuardRes/UI/countTwo.png");
+	auto count3 = Sprite::create("CarrotGuardRes/UI/countThree.png");
+	Label* count0 = Label::createWithSystemFont("GO", "Arial-BoldMT", 100);
 
-	// 设置label不显示
-	label1->setVisible(false);
-	label2->setVisible(false);
-	label3->setVisible(false);
+	countBackground->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count1->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count2->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count3->setPosition(_screenWidth / 2, _screenHeight / 2);
+	count0->setPosition(_screenWidth / 2, _screenHeight / 2);
 
-	this->addChild(label1, 20);
-	this->addChild(label2, 20);
-	this->addChild(label3, 20);
+	countBackground->setVisible(false);
+	count1->setVisible(false);
+	count2->setVisible(false);
+	count3->setVisible(false);
+	count0->setVisible(false);
+
+	this->addChild(countBackground, 20);
+	this->addChild(count1, 20);
+	this->addChild(count2, 20);
+	this->addChild(count3, 20);
+	this->addChild(count0, 20);
+
 	//存档怪物的回调函数
 	auto baginSaveGame = CallFunc::create([=] {
 		beganSaveGame();
@@ -763,29 +819,302 @@ void GameScene::CountDown()
 
 	// 设置倒数sequence动作
 	auto countdown = Sequence::create(CallFunc::create([=] {
-		label3->setVisible(true);
+		countBackground->setVisible(true);
+		count3->setVisible(true);
 		}), DelayTime::create(1), CallFunc::create([=] {
-			this->removeChild(label3);
+			this->removeChild(count3);
 			}), CallFunc::create([=] {
-				label2->setVisible(true);
+				count2->setVisible(true);
 				}), DelayTime::create(1), CallFunc::create([=] {
-					this->removeChild(label2);
+					this->removeChild(count2);
 					}), CallFunc::create([=] {
-						label1->setVisible(true);
+						count1->setVisible(true);
 						}), DelayTime::create(1), CallFunc::create([=] {
-							this->removeChild(label1);
-							// 游戏主循环
-							scheduleUpdate();
-							// 加载存档
-							if (IS_LOAD_SAVE_GAME) {
-								beganSaveGame();
-							}
-							// 生成怪物
-							generateMonsters();
-							}), NULL);
+							this->removeChild(count1);
+							count0->setVisible(true);
+							}), DelayTime::create(1), CallFunc::create([=] {
+								this->removeChild(count0);
+								this->removeChild(countBackground);
+								// 游戏主循环
+								scheduleUpdate();
+								// 加载存档
+								if (IS_LOAD_SAVE_GAME) {
+									beganSaveGame();
+								}
+								// 生成怪物
+								generateMonsters();
+
+								}), NULL);
+
 
 	this->runAction(countdown);
 }
+
+void GameScene::onSpeedButton(Ref* pSender) {
+
+	// 获取加速按钮
+	auto button = static_cast<ui::Button*>(pSender);
+	// 在这里改变按钮的样式
+	int isDoubleSpeed = getIsDoubleSpeed();
+	// 点击时是二倍速
+	if (isDoubleSpeed) {
+		button->loadTextures("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png");
+		setIsDoubleSpeed(0);
+	}
+	// 点击时是正常倍速
+	else {
+		button->loadTextures("CarrotGuardRes/UI/doubleSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
+		setIsDoubleSpeed(1);
+	}
+
+	// 这里再次获取一下方便下面的逻辑理解
+	isDoubleSpeed = getIsDoubleSpeed();
+	//下面进行二倍速处理
+	if (isDoubleSpeed) {
+		for (auto monster : _currentMonsters) {//*******暂时还没有实现
+			monster->setSpeed(10);
+		}
+		for (auto turret : _currentTurrets) {
+		}
+	}
+	// 恢复正常倍速理解
+	else {
+		for (auto monster : _currentMonsters) {
+			monster->setSpeed(1);
+		}
+		for (auto turret : _currentTurrets) {
+		}
+	}
+
+
+
+}
+
+void GameScene::onPauseButton(Ref* pSender) {
+	// 获取暂停按钮
+	auto button = static_cast<ui::Button*>(pSender);
+	int isPaused = getIsPaused();
+	// 点击时是暂停
+	if (isPaused) {
+		button->loadTextures("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/pauseButton.png");
+		// 恢复游戏进行
+		this->scheduleUpdate();
+		Director::getInstance()->resume();
+
+		this->removeChildByName("pauseTop");
+
+		setIsPaused(0);
+	}
+	// 点击时是正常
+	else {
+		button->loadTextures("CarrotGuardRes/UI/continueButton.png", "CarrotGuardRes/UI/continueButton.png");
+
+		// 添加顶部暂停标识
+		auto pauseTop = Sprite::create("CarrotGuardRes/UI/pausing.png");
+		pauseTop->setName("pauseTop");
+		pauseTop->setPosition(Vec2(_screenWidth / 2, _screenHeight * 0.945));
+		pauseTop->setScale(2.0f);
+		this->addChild(pauseTop, 10);
+
+		//停止游戏进行
+		this->unscheduleUpdate();
+		Director::getInstance()->pause();
+		setIsPaused(1);
+	}
+
+}
+
+void GameScene::onMenuButton() {
+
+	//停止游戏进行
+	this->unscheduleUpdate();
+	//停止所有节点的动作
+	this->pause();//停止点击事件
+	Director::getInstance()->pause();// 停止动作事件
+
+
+	auto menuLayer = LayerColor::create(Color4B(0, 0, 0, 150));
+	menuLayer->setPosition(Vec2::ZERO);
+	this->addChild(menuLayer, 10);
+
+
+	auto menuBackground = Sprite::create("CarrotGuardRes/UI/gameMenu.png");
+	menuBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
+	menuBackground->setScale(1.5f);
+	menuLayer->addChild(menuBackground, 0);
+
+	auto menu = Menu::create();
+	menu->setPosition(Vec2::ZERO);
+	menuLayer->addChild(menu, 1);
+
+	auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
+	continueButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.649));
+	continueButton->setScale(1.5);
+	auto restartButton = MenuItemImage::create("CarrotGuardRes/UI/restartNormal.png", "CarrotGuardRes/UI/restartSelected.png");
+	restartButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.51));
+	restartButton->setScale(1.5);
+	auto chooseButton = MenuItemImage::create("CarrotGuardRes/UI/chooseLevelNormal.png", "CarrotGuardRes/UI/chooseLevelSelected.png");
+	chooseButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.375));
+	chooseButton->setScale(1.5);
+
+	// 继续游戏选项
+	continueButton->setCallback([this, menuLayer](Ref* psender) {
+		this->removeChild(menuLayer);
+		// 恢复游戏进行
+		this->scheduleUpdate();
+		// 恢复所有节点的动作
+		this->resume();
+		Director::getInstance()->resume();
+		});
+
+	//重新开始游戏选项
+	restartButton->setCallback([this, menuLayer](Ref* psender) {
+
+		auto gameScene = GameScene::createSceneWithLevel(1, 0);
+		Director::getInstance()->replaceScene(gameScene);
+		this->removeChild(menuLayer);
+		auto runningScene = Director::getInstance()->getRunningScene();
+		auto gameLayer = runningScene->getChildByName("layer");
+		Director::getInstance()->resume();
+		});
+
+	//选择关卡选项
+	chooseButton->setCallback([this, menuLayer](Ref* psender) {
+		auto skylineScene = SkyLineSelection::createScene();
+		Director::getInstance()->replaceScene(skylineScene);
+		auto runningScene = Director::getInstance()->getRunningScene();
+		auto gameLayer = runningScene->getChildByName("layer");
+		this->removeChild(menuLayer);
+		});
+
+
+	menu->addChild(continueButton, 1);
+	menu->addChild(chooseButton, 1);
+	menu->addChild(restartButton, 1);
+
+	auto listener = EventListenerTouchOneByOne::create();
+	listener->setSwallowTouches(true);
+	listener->onTouchBegan = [menuLayer](Touch* touch, Event* event) {
+		return true;
+		};
+
+
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, menuLayer);
+
+}
+
+
+void GameScene::gameOver(int isWin) {
+	//// 清空存档
+	//cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	//std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	//fileUtils->writeStringToFile("", fileUtils->getWritablePath() + path);
+	//停止游戏进行
+	this->unscheduleUpdate();
+	//停止所有节点的动作
+	this->pause();
+
+	// 设置灰色遮罩层
+	auto menuLayer = LayerColor::create(Color4B(0, 0, 0, 150));
+	menuLayer->setPosition(Vec2::ZERO);
+	this->addChild(menuLayer, 10);
+
+	// 创建菜单
+	auto menu = Menu::create();
+	menu->setPosition(Vec2::ZERO);
+	menuLayer->addChild(menu, 1);
+
+	// 游戏胜利
+	if (isWin) {
+		auto gameWinBackground = Sprite::create("CarrotGuardRes/UI/WinGame.png");
+		gameWinBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
+		gameWinBackground->setScale(1.5f);
+		menuLayer->addChild(gameWinBackground, 0);
+
+		auto goldenCarrot = Sprite::create("CarrotGuardRes/UI/goldenCarrot.png");
+		goldenCarrot->setPosition(Vec2(_screenWidth * 0.493, _screenHeight * 0.7));
+		menuLayer->addChild(goldenCarrot, 0);
+
+		// 胜利的相关提示语
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum > _monsterWave ? _monsterWave : _currNum), "Arial", 32);
+		_curNumberLabel->setColor(Color3B::YELLOW);
+		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
+		Label* loseWordLeft = Label::createWithSystemFont("fought off", "Arial", 30);
+		loseWordLeft->setPosition(_screenWidth * 0.36, _screenHeight * 0.54);
+		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial", 30);
+		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.545);
+
+		this->addChild(_curNumberLabel, 10);
+		this->addChild(loseWordLeft, 10);
+		this->addChild(loseWordRight, 10);
+
+		auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
+		continueButton->setPosition(Vec2(_screenWidth * 0.613, _screenHeight * 0.375));
+		continueButton->setScale(1.38);
+
+		continueButton->setCallback([this, menuLayer](Ref* psender) {
+			//这里写进入下一关的部分，如果到了最后一关则返回选关界面
+			});
+		menu->addChild(continueButton, 1);
+	}
+	// 游戏失败
+	else {
+		auto gameLoseBackground = Sprite::create("CarrotGuardRes/UI/LoseGame.png");
+		gameLoseBackground->setPosition(Vec2(_screenWidth / 2 + _screenWidth * 0.01, _screenHeight / 2 + _screenHeight * 0.015));
+		gameLoseBackground->setScale(1.5f);
+		menuLayer->addChild(gameLoseBackground, 0);
+
+		// 游戏失败的相关提示语
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum - 1), "Arial", 32);// 暂时没搞currnum为什么会大1，所以先-1
+		_curNumberLabel->setColor(Color3B::YELLOW);
+		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
+		Label* loseWordLeft = Label::createWithSystemFont("fought off", "Arial", 30);
+		loseWordLeft->setPosition(_screenWidth * 0.36, _screenHeight * 0.54);
+		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial", 30);
+		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.54);
+
+		this->addChild(_curNumberLabel, 10);
+		this->addChild(loseWordLeft, 10);
+		this->addChild(loseWordRight, 10);
+
+		auto againButton = MenuItemImage::create("CarrotGuardRes/UI/AgainNormal.png", "CarrotGuardRes/UI/AgainSelected.png");
+		againButton->setPosition(Vec2(_screenWidth * 0.61, _screenHeight * 0.37));
+		againButton->setScale(0.9);
+
+		// 重新开始按钮的选项
+		againButton->setCallback([this, menuLayer](Ref* psender) {
+			auto gameScene = GameScene::createSceneWithLevel(1, 0);
+			Director::getInstance()->replaceScene(gameScene);
+			this->removeChild(menuLayer);
+			auto runningScene = Director::getInstance()->getRunningScene();
+			auto gameLayer = runningScene->getChildByName("layer");
+			});
+		menu->addChild(againButton, 1);
+
+	}
+
+
+
+	auto chooseButton = MenuItemImage::create("CarrotGuardRes/UI/chooseLevelNormal.png", "CarrotGuardRes/UI/chooseLevelSelected.png");
+	chooseButton->setPosition(Vec2(_screenWidth * 0.38, _screenHeight * 0.37));
+	chooseButton->setScale(1.4);
+
+
+
+	chooseButton->setCallback([this, menuLayer](Ref* psender) {
+		auto skylineScene = SkyLineSelection::createScene();
+		Director::getInstance()->replaceScene(skylineScene);
+		auto runningScene = Director::getInstance()->getRunningScene();
+		auto gameLayer = runningScene->getChildByName("layer");
+		this->removeChild(menuLayer);
+		});
+
+
+
+	menu->addChild(chooseButton, 1);
+
+}
+
 
 
 // TMX point ->Screen
@@ -839,6 +1168,11 @@ void GameScene::generateMonsters() {
 		_currNum++;
 		if (_currNum <= _monsterWave) {
 			generateMonsterWave();
+			if (_currNum == _monsterWave) {
+				setIsFinalWave(1);
+
+			}
+
 		}
 		else {
 			unschedule("generateMonsters");
@@ -962,18 +1296,37 @@ void GameScene::updateGameState()
 	_goldLabel->setString(StringUtils::format("%d", _goldValue));
 	// 更新波数标签
 	_curNumberLabel->setString(StringUtils::format("%d", _currNum > _monsterWave ? _monsterWave : _currNum));
-	// 判断游戏是否结束：成功或失败
-	//==========待完善============
+
+	// 增加最后一波怪物动画
+	if (_currNum == _monsterWave && getIsFinalWave() == 1) {
+		auto finalWave = Sprite::create("CarrotGuardRes/UI/finalWave.png");
+		finalWave->setName("finalWave");
+		finalWave->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
+		finalWave->setScale(2.0f);
+		this->addChild(finalWave, 10);
+
+		// 创建延迟动作和移除节点动作的组合动作
+		auto delay = DelayTime::create(1.0f);
+		auto remove = RemoveSelf::create();
+		auto sequence = Sequence::create(delay, remove, nullptr);
+
+		// 执行组合动作
+		finalWave->runAction(sequence);
+		setIsFinalWave(0);
+	}
 	// 失败
 	if (getCarrotHealth() <= 0) {
+		gameOver(0);
 		CCLOG("****************GAME OVER***************");
 		return;
 
 	}
 	// 成功
 	if (_monsterDeath >= _monsterAll) {
+		gameOver(1);
 		CCLOG("***************YOU WIN*******************");
 	}
+
 }
 // 要存档数据
 //int _currNum = 1;            // 当前怪物波数

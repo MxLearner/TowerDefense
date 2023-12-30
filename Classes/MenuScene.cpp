@@ -2,7 +2,6 @@
 #include "AdvantureScene.h"
 #include "SettingScene.h"
 #include "ui/CocosGUI.h"
-#include"clientGameScene.h"
 using namespace ui;
 static void problemLoading(const char* filename)
 {
@@ -159,22 +158,46 @@ bool MenuScene::init() {
 	}
 	else
 	{
-		float x = visibleSize.width * 20 / 100.0;
-		float y = visibleSize.height * 15 / 100.0;
+		float x = visibleSize.width * 0.2;
+		float y = visibleSize.height * 0.15;
 		advantureButton->setPosition(Vec2(x, y));
 		advantureButton->setScale(1.5f * backgroundScale);
 		menu->addChild(advantureButton);
 	}
-	// tmp 联机测试按钮
-	auto tmpButton = MenuItemImage::create("CarrotGuardRes/UI/AdvantureButtonNormal.png", "CarrotGuardRes/UI/AdvantureButtonSelected.png", CC_CALLBACK_1(MenuScene::ToTmpScene, this));
-	float x = visibleSize.width * 80 / 100.0;
-	float y = visibleSize.height * 15 / 100.0;
-	tmpButton->setPosition(Vec2(x, y));
-	tmpButton->setScale(1.5f * backgroundScale);
-	menu->addChild(tmpButton);
 
+	//添加boss模式按钮
+	auto bossButton = MenuItemImage::create("CarrotGuardRes/UI/BossButtonNormal.png", "CarrotGuardRes/UI/BossButtonSelected.png");
+	if (bossButton == nullptr ||
+		bossButton->getContentSize().width <= 0 ||
+		bossButton->getContentSize().height <= 0)
+	{
+		problemLoading("'CarrotGuardRes/UI/BossButtonNormal.png'and 'CarrotGuardRes/UI/BossButtonSelected.png'");
+	}
+	else
+	{
+		float x = visibleSize.width * 0.5;
+		float y = visibleSize.height * 0.15;
+		bossButton->setPosition(Vec2(x, y));
+		bossButton->setScale(backgroundScale);
+		menu->addChild(bossButton);
+	}
+	//添加怪物超按钮
+	auto netButton = MenuItemImage::create("CarrotGuardRes/UI/NetButtonNormal.png", "CarrotGuardRes/UI/NetButtonSelected.png");
+	if (netButton == nullptr ||
+		netButton->getContentSize().width <= 0 ||
+		netButton->getContentSize().height <= 0)
+	{
+		problemLoading("'CarrotGuardRes/UI/NetButtonNormal.png'and 'CarrotGuardRes/UI/NetButtonSelected.png'");
+	}
+	else
+	{
+		float x = visibleSize.width * 0.8;
+		float y = visibleSize.height * 0.15;
+		netButton->setPosition(Vec2(x, y));
+		netButton->setScale(backgroundScale);
+		menu->addChild(netButton);
+	}
 
-	//
 	//设置界面按钮
 	auto settingImage = MenuItemImage::create("CarrotGuardRes/UI/SettingNormal.png", "SettingSelected.png", CC_CALLBACK_1(MenuScene::ToSettingScene, this));
 	if (settingImage == nullptr)
@@ -208,10 +231,4 @@ void MenuScene::ToAdvantureScene(Ref* pSender) {
 void MenuScene::ToSettingScene(Ref* pSender) {
 	auto settingScene = SettingScene::createScene();
 	Director::getInstance()->replaceScene(settingScene);
-}
-//
-void MenuScene::ToTmpScene(Ref* pSender)
-{
-	auto clientGameScene = ClientGameScene::createSceneWithLevel(2);
-	Director::getInstance()->replaceScene(clientGameScene);
 }
