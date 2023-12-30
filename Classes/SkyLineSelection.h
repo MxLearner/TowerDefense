@@ -12,17 +12,25 @@
 #include "cocos2d.h"
 USING_NS_CC;
 
-class SkyLineSelection : public Layer {
+class SkyLineSelection : public Layer {\
+private:
+    int _selectLevelIndex;
+
 public:
     static Scene* createScene();
     virtual bool init();
 
     void ToAdvantureScene(Ref* pSender);
-    void ToGameScene(Ref* pSender);
 
     // implement the "static create()" method manually
     CREATE_FUNC(SkyLineSelection);
 
+    int getSelectLevelIndex() {
+        return _selectLevelIndex;
+    }
+    void setSelectLevelIndex(int index) {
+        _selectLevelIndex = index;
+    }
 
 };
 

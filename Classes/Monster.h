@@ -101,8 +101,6 @@ public:
 	int getStep() {
 		return _step;
 	}
-
-
 };
 
 #endif // !_Monster_H

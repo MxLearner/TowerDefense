@@ -711,7 +711,7 @@ void GameScene::TopLabel()
 	topImage->setScale(_screenWidth / topImage->getContentSize().width);
 	this->addChild(topImage, 1);
 
-
+	// 二倍速按钮
 	auto speedButton = Button::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
 	speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.23, _screenHeight + origin.y - _screenHeight * 0.055f));
 	this->addChild(speedButton, 2);
@@ -733,12 +733,13 @@ void GameScene::TopLabel()
 		}
 		});*/
 
-
+	// 暂停按钮
 	auto pauseButton = Button::create("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/continueButton.png");
 	pauseButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.33, _screenHeight + origin.y - _screenHeight * 0.055f));
 	this->addChild(pauseButton, 2);
 	pauseButton->addClickEventListener(CC_CALLBACK_1(GameScene::onPauseButton, this));
 	
+	// 菜单按钮
 	auto menuButton = Button::create("CarrotGuardRes/UI/gameMenuNormal.png", "CarrotGuardRes/UI/gameMenuSelected.png");
 	menuButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.43, _screenHeight + origin.y - _screenHeight * 0.055f));
 	this->addChild(menuButton,2);
@@ -837,7 +838,6 @@ void GameScene::onSpeedButton(Ref* pSender) {
 			monster->setSpeed(10);
 		}
 		for (auto turret : _currentTurrets) {
-			turret->setShootFreq(0.1);//*******暂时也没有实现
 		}
 	}
 	// 恢复正常倍速理解
@@ -846,7 +846,6 @@ void GameScene::onSpeedButton(Ref* pSender) {
 			monster->setSpeed(1);
 		}
 		for (auto turret : _currentTurrets) {
-			turret->setShootFreq(0.5);
 		}
 	}
 
@@ -921,7 +920,7 @@ void GameScene::onMenuButton() {
 	chooseButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.375));
 	chooseButton->setScale(1.5);
 
-
+	// 继续游戏选项
 	continueButton->setCallback([this, menuLayer](Ref* psender) {
 		this->removeChild(menuLayer);
 		// 恢复游戏进行
@@ -931,6 +930,7 @@ void GameScene::onMenuButton() {
 		Director::getInstance()->resume();
 		});
 
+	//重新开始游戏选项
 	restartButton->setCallback([this, menuLayer](Ref* psender) {
 
 		auto gameScene = GameScene::createSceneWithLevel(1);
@@ -941,7 +941,7 @@ void GameScene::onMenuButton() {
 		Director::getInstance()->resume();
 		});
 
-
+	//选择关卡选项
 	chooseButton->setCallback([this, menuLayer](Ref* psender) {
 		auto skylineScene = SkyLineSelection::createScene();
 		Director::getInstance()->replaceScene(skylineScene);
@@ -972,10 +972,12 @@ void GameScene::gameOver(int isWin) {
 	//停止所有节点的动作
 	this->pause();
 
+	// 设置灰色遮罩层
 	auto menuLayer = LayerColor::create(Color4B(0, 0, 0, 150));
 	menuLayer->setPosition(Vec2::ZERO);
 	this->addChild(menuLayer, 10);
 
+	// 创建菜单
 	auto menu = Menu::create();
 	menu->setPosition(Vec2::ZERO);
 	menuLayer->addChild(menu, 1);
@@ -991,13 +993,14 @@ void GameScene::gameOver(int isWin) {
 		goldenCarrot->setPosition(Vec2(_screenWidth *0.493, _screenHeight*0.7));
 		menuLayer->addChild(goldenCarrot, 0);
 
-		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum-1), "Arial", 32);
+		// 胜利的相关提示语
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum), "Arial", 32);
 		_curNumberLabel->setColor(Color3B::YELLOW);
 		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
-		Label* loseWordLeft = Label::createWithSystemFont("you fought off", "Arial-BoldMT", 27);
-		loseWordLeft->setPosition(_screenWidth * 0.33, _screenHeight * 0.54);
-		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial-BoldMT", 30);
-		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.54);
+		Label* loseWordLeft = Label::createWithSystemFont("fought off", "Arial", 30);
+		loseWordLeft->setPosition(_screenWidth * 0.36, _screenHeight * 0.54);
+		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial", 30);
+		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.545);
 
 		this->addChild(_curNumberLabel, 10);
 		this->addChild(loseWordLeft, 10);
@@ -1008,7 +1011,7 @@ void GameScene::gameOver(int isWin) {
 		continueButton->setScale(1.38);
 
 		continueButton->setCallback([this, menuLayer](Ref* psender) {
-			//写进入level2的部分
+			//这里写进入下一关的部分，如果到了最后一关则返回选关界面
 			});
 		menu->addChild(continueButton, 1);
 	}
@@ -1019,12 +1022,13 @@ void GameScene::gameOver(int isWin) {
 		gameLoseBackground->setScale(1.5f);
 		menuLayer->addChild(gameLoseBackground, 0);
 
+		// 游戏失败的相关提示语
 		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum-1), "Arial", 32);// 暂时没搞currnum为什么会大1，所以先-1
 		_curNumberLabel->setColor(Color3B::YELLOW);
 		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
-		Label* loseWordLeft = Label::createWithSystemFont("you fought off", "Arial-BoldMT", 27);
-		loseWordLeft->setPosition(_screenWidth * 0.33, _screenHeight * 0.54);
-		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial-BoldMT", 30);
+		Label* loseWordLeft = Label::createWithSystemFont("fought off", "Arial", 30);
+		loseWordLeft->setPosition(_screenWidth * 0.36, _screenHeight * 0.54);
+		Label* loseWordRight = Label::createWithSystemFont("waves", "Arial", 30);
 		loseWordRight->setPosition(_screenWidth * 0.60, _screenHeight * 0.54);
 
 		this->addChild(_curNumberLabel, 10);
@@ -1035,6 +1039,7 @@ void GameScene::gameOver(int isWin) {
 		againButton->setPosition(Vec2(_screenWidth * 0.61, _screenHeight * 0.37));
 		againButton->setScale(0.9);
 
+		// 重新开始按钮的选项
 		againButton->setCallback([this, menuLayer](Ref* psender) {
 			auto gameScene = GameScene::createSceneWithLevel(1);
 			Director::getInstance()->replaceScene(gameScene);

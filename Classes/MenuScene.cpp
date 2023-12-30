@@ -158,11 +158,44 @@ bool MenuScene::init() {
     }
     else
     {
-        float x = visibleSize.width * 20 / 100.0;
-        float y = visibleSize.height * 15 / 100.0;
+        float x = visibleSize.width * 0.2;
+        float y = visibleSize.height * 0.15;
         advantureButton->setPosition(Vec2(x, y));
         advantureButton->setScale(1.5f * backgroundScale);
         menu->addChild(advantureButton);
+    }
+
+    //添加boss模式按钮
+    auto bossButton = MenuItemImage::create("CarrotGuardRes/UI/BossButtonNormal.png", "CarrotGuardRes/UI/BossButtonSelected.png");
+    if (bossButton == nullptr ||
+        bossButton->getContentSize().width <= 0 ||
+        bossButton->getContentSize().height <= 0)
+    {
+        problemLoading("'CarrotGuardRes/UI/BossButtonNormal.png'and 'CarrotGuardRes/UI/BossButtonSelected.png'");
+    }
+    else
+    {
+        float x = visibleSize.width * 0.5;
+        float y = visibleSize.height * 0.15;
+        bossButton->setPosition(Vec2(x, y));
+        bossButton->setScale(backgroundScale);
+        menu->addChild(bossButton);
+    }
+    //添加怪物超按钮
+    auto netButton = MenuItemImage::create("CarrotGuardRes/UI/NetButtonNormal.png", "CarrotGuardRes/UI/NetButtonSelected.png");
+    if (netButton == nullptr ||
+        netButton->getContentSize().width <= 0 ||
+        netButton->getContentSize().height <= 0)
+    {
+        problemLoading("'CarrotGuardRes/UI/NetButtonNormal.png'and 'CarrotGuardRes/UI/NetButtonSelected.png'");
+    }
+    else
+    {
+        float x = visibleSize.width * 0.8;
+        float y = visibleSize.height * 0.15;
+        netButton->setPosition(Vec2(x, y));
+        netButton->setScale(backgroundScale);
+        menu->addChild(netButton);
     }
 
     //设置界面按钮

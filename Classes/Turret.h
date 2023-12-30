@@ -23,7 +23,6 @@ protected:
 	int _level = 1;            // 当前等级
 	int _range = 100;           // 攻击范围
 	Monster* _monster = nullptr;  // 当前炮塔是否追踪到了怪物
-	float _shootFreq = 0.5;
 
 	int _cost1;
 	int _cost2;
@@ -121,13 +120,6 @@ public:
 		return _damage;
 	}
 	void upgrade();
-
-	void setShootFreq(float freq) {
-		_shootFreq = freq;
-	}
-	float getShootFreq() {
-		return _shootFreq;
-	}
 };
 
 #endif // !_Turret_H_

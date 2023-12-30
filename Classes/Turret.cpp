@@ -9,12 +9,9 @@ bool Turret::init()
 	// 创建并发射子弹
 	this->schedule([this](float dt) {
 		ShootBullet();
-		}, _shootFreq, "shootBullet");
-
+		}, 0.5f, "shootBullet");
 	return true;
 }
-
-
 void Turret::ShootAtMonster(Monster* target) {
 	// 计算炮塔转向角度
 	Vec2 targetPos = target->getPosition();
@@ -37,7 +34,6 @@ void Turret::ShootAtMonster(Monster* target) {
 }
 
 void Turret::update(float dt) {
-
 	// 获取当前场景
 	auto Scene = Director::getInstance()->getRunningScene();
 	// 获取 layer 对象
@@ -57,9 +53,6 @@ void Turret::update(float dt) {
 			_monster = nullptr;
 		}
 	}
-
-
-
 }
 
 void Turret::ShootBullet()
