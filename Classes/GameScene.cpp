@@ -11,7 +11,7 @@ USING_NS_CC;
 static int currentLevel = 2;  // 当前关卡
 static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
 
-static int IS_BEGAN_SERVER = 0;// 是否开启联机
+static int IS_BEGAN_SERVER = 1;// 是否开启联机，设置默认开启吧，不然还要加个按钮
 
 #define DEBUG
 void GameScene::startServer()
@@ -1005,10 +1005,16 @@ void GameScene::onMenuButton() {
 
 
 void GameScene::gameOver(int isWin) {
-	//// 清空存档
-	//cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
-	//std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
-	//fileUtils->writeStringToFile("", fileUtils->getWritablePath() + path);
+	// 清空存档
+	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	if (fileUtils->isFileExist(fileUtils->getWritablePath() + path)) {
+		fileUtils->writeStringToFile(" ", fileUtils->getWritablePath() + path);
+	}
+	else {
+		CCLOG("File does not exist: %s", (fileUtils->getWritablePath() + path).c_str());
+	}
+
 	//停止游戏进行
 	this->unscheduleUpdate();
 	//停止所有节点的动作
@@ -1249,14 +1255,15 @@ Vector<Monster*>& GameScene::getMonsters() {
 
 void GameScene::update(float dt)
 {
+	// **************别动这个顺序***************
 	// 更新怪物
 	updateMonster();
-	// 更新游戏界面
-	updateGameState();
 	// 更新存档
 	SaveGame();
 	// 更新gamemassagebuffer
 	udpserver.setGameMassageBuffer(gameMassageBuffer);
+	// 更新游戏界面
+	updateGameState();
 }
 
 void GameScene::updateMonster()
@@ -1435,7 +1442,9 @@ void GameScene::LoadSaveGame()
 	// 读取文件内容
 	std::string contentStr = FileUtils::getInstance()->getStringFromFile(filePath);
 	// 判断文件是否为空
-	if (contentStr.empty()) {
+	if (contentStr.empty() || contentStr == " ") {
+		// cocos 函数不允许输入空字符串，写入一个空格，代表清空存档
+		// fileUtils->writeStringToFile(" ", fileUtils->getWritablePath() + path); 
 		CCLOG("file is empty");
 		return;
 	}

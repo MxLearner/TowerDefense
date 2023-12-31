@@ -5,7 +5,7 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-#define BUFFSIZE 10240
+#define BUFFSIZE 102400
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 16555
 

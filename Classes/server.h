@@ -4,7 +4,7 @@
 #include<iostream>
 #include <WinSock2.h>
 #pragma comment(lib, "ws2_32.lib")
-#define BUFFSIZE 10240
+#define BUFFSIZE 102400
 #define DEFAULT_PORT 16555
 
 
