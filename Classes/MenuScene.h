@@ -21,7 +21,7 @@ public:
 	void menuCloseCallback(Ref* pSender);
 	void ToAdvantureScene(Ref* pSender);
 	void ToSettingScene(Ref* pSender);
-	void ToTmpScene(Ref* pSender);
+	void ToClientGameScene(Ref* pSender);
 
 	// implement the "static create()" method manually
 	CREATE_FUNC(MenuScene);

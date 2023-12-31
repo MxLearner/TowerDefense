@@ -1,6 +1,7 @@
 #include "MenuScene.h"
 #include "AdvantureScene.h"
 #include "SettingScene.h"
+#include"clientGameScene.h"
 #include "ui/CocosGUI.h"
 using namespace ui;
 static void problemLoading(const char* filename)
@@ -182,7 +183,7 @@ bool MenuScene::init() {
 		menu->addChild(bossButton);
 	}
 	//Ìí¼Ó¹ÖÎï³¬°´Å¥
-	auto netButton = MenuItemImage::create("CarrotGuardRes/UI/NetButtonNormal.png", "CarrotGuardRes/UI/NetButtonSelected.png");
+	auto netButton = MenuItemImage::create("CarrotGuardRes/UI/NetButtonNormal.png", "CarrotGuardRes/UI/NetButtonSelected.png", CC_CALLBACK_1(MenuScene::ToClientGameScene, this));
 	if (netButton == nullptr ||
 		netButton->getContentSize().width <= 0 ||
 		netButton->getContentSize().height <= 0)
@@ -231,4 +232,12 @@ void MenuScene::ToAdvantureScene(Ref* pSender) {
 void MenuScene::ToSettingScene(Ref* pSender) {
 	auto settingScene = SettingScene::createScene();
 	Director::getInstance()->replaceScene(settingScene);
+}
+
+void MenuScene::ToClientGameScene(Ref* pSender) {
+	auto netScene = ClientGameScene::createScene();
+	if (netScene != nullptr) {
+		Director::getInstance()->pushScene(netScene);
+
+	}
 }

@@ -7,18 +7,21 @@
 using namespace ui;
 USING_NS_CC;
 
-static int currentLevel = 2;  // 当前关卡
-Scene* ClientGameScene::createSceneWithLevel(int selectLevel)
+static int currentLevel = -1;  // 当前关卡
+static int IS_GET_CURRENT_LEVEL = 0; // 是否获取到当前关卡
+Scene* ClientGameScene::createScene()
 {
-	// 获得关卡编号
-	currentLevel = selectLevel;
-
 	auto scene = Scene::create();
-
 	auto layer = ClientGameScene::create();
 	layer->setName("layer"); // 设个名字
 	scene->addChild(layer);
-	return scene;
+	if (IS_GET_CURRENT_LEVEL) {
+		return  scene;
+	}
+	else {
+		return nullptr;
+
+	}
 }
 
 bool ClientGameScene::init()
@@ -33,7 +36,10 @@ bool ClientGameScene::init()
 	// 开启客户端
 	std::thread serverThread(&ClientGameScene::startClient, this);
 	serverThread.detach();
-
+	// 获取关卡
+	if (!getCurrentLevel()) {
+		return true;
+	}
 	// 读取关卡数据 
 	LoadLevelData();
 	// 设置屏幕数据
@@ -60,6 +66,9 @@ void ClientGameScene::LoadLevelData()
 	rapidjson::Document document;
 
 	// 根据传递的关卡值selectLevel获得对应的关卡数据文件
+	while (currentLevel == -1) {
+		;
+	}
 	std::string filePath = FileUtils::getInstance()->
 		fullPathForFilename(StringUtils::format("CarrotGuardRes/LeveL_%d.data", currentLevel));
 
@@ -185,9 +194,11 @@ void ClientGameScene::initLevel()
 					CCLOG("Monster data is not an object");
 					continue;
 				}
-
 				std::string name = monsterArray[i]["name"].GetString();
 				float lifeValue = monsterArray[i]["lifeValue"].GetFloat();
+				if (!monsterArray[i].HasMember("MaxLifeValue")) {
+					continue;
+				}
 				int maxLifeValue = monsterArray[i]["MaxLifeValue"].GetFloat();
 				int gold = monsterArray[i]["gold"].GetInt();
 				int step = monsterArray[i]["step"].GetInt();
@@ -318,6 +329,33 @@ void ClientGameScene::update(float dt)
 	clearAll();
 	initLevel();
 	updateGameState();
+}
+
+bool ClientGameScene::getCurrentLevel()
+{
+	udpclient.Send("update");
+	// rapidjson 对象
+	rapidjson::Document document;
+	std::string contentStr = udpclient.getMessage();
+
+
+	const int tmp = 1e5;
+	int i = 1;
+	// 等待获取到消息或超时
+	while (i < tmp) {
+		i++;
+		if (!contentStr.empty() && !document.Parse<0>(contentStr.c_str()).HasParseError()) {
+			currentLevel = document["currentLevel"].GetInt();
+			IS_GET_CURRENT_LEVEL = 1;
+			return true;
+		}
+		// 继续发送请求
+		udpclient.Send("update");
+		// 更新消息内容
+		contentStr = udpclient.getMessage();
+	}
+	udpclient.stop();
+	return false;
 }
 
 
