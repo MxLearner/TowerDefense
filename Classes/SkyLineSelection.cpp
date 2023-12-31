@@ -97,7 +97,19 @@ bool SkyLineSelection::init() {
 		layout->addChild(imageView, 1);
 		pageView->addPage(layout);
 	}
+	// 读取通关记录
+	std::string content;
 
+	// 使用FileUtils获取文件数据
+	FileUtils* fileUtils = FileUtils::getInstance();
+	std::string filePath = fileUtils->getWritablePath() + "AllGameSave.json";
+	if (fileUtils->isFileExist(filePath)) {
+		// 读取文件内容
+		content = fileUtils->getStringFromFile(filePath);
+	}
+	else {
+		CCLOG("File not found: %s", filePath.c_str());
+	}
 
 	// 添加触摸事件监听器
 	pageView->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
@@ -105,7 +117,7 @@ bool SkyLineSelection::init() {
 			PageView* pageView = dynamic_cast<PageView*>(pSender);
 			int currentIndex = pageView->getCurrentPageIndex();
 
-			if (currentIndex < 2) {
+			if (currentIndex < 2 && content[currentIndex] == '1') {
 				// 创建确认按钮
 				auto confirmButton = Button::create("CarrotGuardRes/UI/fileNormal.png", "CarrotGuardRes/UI/fileSelected.png");  // 替换成你的按钮图片
 				confirmButton->setName("confirmButton");
@@ -161,7 +173,7 @@ bool SkyLineSelection::init() {
 					this->removeChildByName("confirmButton");
 					this->removeChildByName("cancelButton");
 				}
-				if(locked)
+				if (locked)
 					this->removeChildByName("lockedButton");
 			}
 		}
