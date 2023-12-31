@@ -18,8 +18,6 @@ protected:
 	std::string _name;          // 炮塔名
 	bool _select = false;      // 炮塔是否被安放
 	Bullet* _bullet;           //  炮塔关联的炮弹对象
-	int _buildGold = 100;         // 建造所需金币
-	int _updateGold = 100;     // 升级所需金币
 	int _level = 1;            // 当前等级
 	int _range = 100;           // 攻击范围
 	Monster* _monster = nullptr;  // 当前炮塔是否追踪到了怪物
@@ -118,6 +116,12 @@ public:
 	}
 	int getDamage() {
 		return _damage;
+	}
+	void setLevel(int level) {
+		_level = level;
+	}
+	int getLevel() {
+		return _level;
 	}
 	void upgrade();
 };

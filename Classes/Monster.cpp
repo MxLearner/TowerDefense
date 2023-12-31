@@ -37,7 +37,12 @@ void Monster::startMoving()
 		// 创建一个 MoveTo 动作，使怪物移动到目标位置
 		// 增加可改变的速度
 		auto moveAction = MoveTo::create(0.5 / _speed, targetPos);
+		auto CALLBACK_1 = CallFunc::create([this]() {
+			// 到达一个路线点，步数加一
+			_step++;
+			});
 		moveActions.pushBack(moveAction);
+		moveActions.pushBack(CALLBACK_1);
 
 	}
 	// 使用 Sequence 将所有 MoveTo 动作连接起来
@@ -49,6 +54,8 @@ void Monster::startMoving()
 	// 在动作序列完成后执行回调，移除怪物，此逻辑移到gamescene，
 	// 使用 s 同时执行动作序列和回调
 	auto s = Sequence::create(sequence, callback, nullptr);
+	if (s != nullptr) {
+		runAction(s);
+	}
 
-	runAction(s);
 }

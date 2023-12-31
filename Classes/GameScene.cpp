@@ -1,26 +1,38 @@
-
-
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
 #include"Turret_TB.h"
 #include"Turret_TFan.h"
 #include"Turret_TSun.h"
 #include"SkyLineSelection.h"
-
-
+#include <regex>
 using namespace ui;
 USING_NS_CC;
 
-static int currentLevel = 1;  // 当前关卡
+static int currentLevel = 0;  // 当前关卡
+static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
 
+static int IS_BEGAN_SERVER = 1;// 是否开启联机，设置默认开启吧，不然还要加个按钮
 
 #define DEBUG
+void GameScene::startServer()
+{
+	std::lock_guard<std::mutex> lock(serverMutex);
+
+	if (udpserver.Start()) {
+		udpserver.Receive();
+	}
+	else {
+		CCLOG("server start failed");
+	}
+}
+
 // 根据关卡编号创建游戏关卡场景
-Scene* GameScene::createSceneWithLevel(int selectLevel)
+Scene* GameScene::createSceneWithLevel(int selectLevel, int isSave)
 {   // 获得关卡编号
 	currentLevel = selectLevel;
-
+	IS_LOAD_SAVE_GAME = isSave;
 	auto scene = Scene::create();
+
 	auto layer = GameScene::create();
 	layer->setName("layer"); // 设个名字
 	scene->addChild(layer);
@@ -40,22 +52,37 @@ bool GameScene::init()
 	CCLOG("screenWidth:  %lf, screenHeight:  %lf", _screenWidth, _screenHeight);
 #endif // DEBUG
 
+	// 开启服务端
+	if (IS_BEGAN_SERVER) {
+		std::thread serverThread(&GameScene::startServer, this);
+		serverThread.detach();
+	}
+
+
 	// 读取关卡数据 
 	LoadLevelData();
 	// 进行关卡初始化
 	initLevel();
+	// 读取存档
+	if (IS_LOAD_SAVE_GAME) {
+		LoadSaveGame();
+	}
 	// 设置屏幕数据
 	TopLabel();
 	// 开始游戏时，倒计时
 	CountDown();
+	// 加载存档
+	if (IS_LOAD_SAVE_GAME) {
+		initSaveGame();
+	}
+
 	// 创造鼠标点击时间，用于建塔
 	auto listener = EventListenerMouse::create();
 	//listener->onMouseDown = CC_CALLBACK_1(GameScene::onClicked, this);
 	listener->onMouseDown = CC_CALLBACK_1(GameScene::onMouseDown, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
-	// 生成怪物
-	generateMonsters();
+
 
 	//初始化建造塔和升级塔的点击事件
 	setBuildEvent(NULL);
@@ -65,17 +92,14 @@ bool GameScene::init()
 	setTouchLayer(NULL);
 	createTouchListener();
 	setTouchListener(NULL);
-
 	//初始化二倍速标记
 	setIsDoubleSpeed(0);
 	//初始化最后一波的标记
 	setIsFinalWave(0);
-
 	return true;
 }
 void GameScene::LoadLevelData()
 {
-
 	// rapidjson 对象
 	rapidjson::Document document;
 
@@ -683,18 +707,19 @@ void GameScene::initLevel()
 
 
 void GameScene::TopLabel()
+
 {
 	// 注意屏幕数据的父节点应该是scece ，而不是瓦片地图，因为瓦片地图进行了缩放，
 	// 如果是瓦片地图的子节点基于屏幕的setposition 会进行缩放，被挤出屏幕！！！！
 	// 1. 显示出现了多少波怪物
-	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum), "Arial", 32);
+	_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", std::min(_currNum, _monsterWave)), "Arial", 32);
 	_curNumberLabel->setColor(Color3B::YELLOW);
 	_curNumberLabel->setPosition(_screenWidth * 0.45, _screenHeight * 0.95);
 	//_tileMap->addChild(_curNumberLabel);
 	this->addChild(_curNumberLabel, 2);
 	// 2. 一共有多少波怪物
 	_numberLabel = Label::createWithSystemFont(StringUtils::format("/%dtimes", _monsterWave), "Arial", 32);
-	_numberLabel->setColor(Color3B::WHITE);
+	_curNumberLabel->setColor(Color3B::YELLOW);
 	_numberLabel->setPosition(_screenWidth * 0.53, _screenHeight * 0.95);
 	this->addChild(_numberLabel, 2);
 	// 3. 右上角金币数量
@@ -733,16 +758,16 @@ void GameScene::TopLabel()
 		}
 		});*/
 
-	// 暂停按钮
+		// 暂停按钮
 	auto pauseButton = Button::create("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/continueButton.png");
 	pauseButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.33, _screenHeight + origin.y - _screenHeight * 0.055f));
 	this->addChild(pauseButton, 2);
 	pauseButton->addClickEventListener(CC_CALLBACK_1(GameScene::onPauseButton, this));
-	
+
 	// 菜单按钮
 	auto menuButton = Button::create("CarrotGuardRes/UI/gameMenuNormal.png", "CarrotGuardRes/UI/gameMenuSelected.png");
 	menuButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.43, _screenHeight + origin.y - _screenHeight * 0.055f));
-	this->addChild(menuButton,2);
+	this->addChild(menuButton, 2);
 	menuButton->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
 		switch (type) {
 		case Button::TouchEventType::BEGAN:
@@ -756,13 +781,13 @@ void GameScene::TopLabel()
 			break;
 		}
 		});
-		
+
+
 }
 
 
 void GameScene::CountDown()
 {
-
 	auto countBackground = Sprite::create("CarrotGuardRes/UI/countBackground.png");
 	auto count1 = Sprite::create("CarrotGuardRes/UI/countOne.png");
 	auto count2 = Sprite::create("CarrotGuardRes/UI/countTwo.png");
@@ -787,6 +812,11 @@ void GameScene::CountDown()
 	this->addChild(count3, 2);
 	this->addChild(count0, 2);
 
+	//存档怪物的回调函数
+	auto baginSaveGame = CallFunc::create([=] {
+		beganSaveGame();
+		});
+
 	// 设置倒数sequence动作
 	auto countdown = Sequence::create(CallFunc::create([=] {
 		countBackground->setVisible(true);
@@ -801,12 +831,19 @@ void GameScene::CountDown()
 						count1->setVisible(true);
 						}), DelayTime::create(1), CallFunc::create([=] {
 							this->removeChild(count1);
-							count0->setVisible(true); 
+							count0->setVisible(true);
 							}), DelayTime::create(1), CallFunc::create([=] {
 								this->removeChild(count0);
 								this->removeChild(countBackground);
 								// 游戏主循环
 								scheduleUpdate();
+								// 加载存档
+								if (IS_LOAD_SAVE_GAME) {
+									beganSaveGame();
+								}
+								// 生成怪物
+								generateMonsters();
+
 								}), NULL);
 
 
@@ -875,7 +912,7 @@ void GameScene::onPauseButton(Ref* pSender) {
 		// 添加顶部暂停标识
 		auto pauseTop = Sprite::create("CarrotGuardRes/UI/pausing.png");
 		pauseTop->setName("pauseTop");
-		pauseTop->setPosition(Vec2(_screenWidth / 2, _screenHeight*0.945));
+		pauseTop->setPosition(Vec2(_screenWidth / 2, _screenHeight * 0.945));
 		pauseTop->setScale(2.0f);
 		this->addChild(pauseTop, 10);
 
@@ -896,22 +933,22 @@ void GameScene::onMenuButton() {
 	Director::getInstance()->pause();// 停止动作事件
 
 
-	auto menuLayer = LayerColor::create(Color4B(0, 0, 0,150));
+	auto menuLayer = LayerColor::create(Color4B(0, 0, 0, 150));
 	menuLayer->setPosition(Vec2::ZERO);
 	this->addChild(menuLayer, 10);
 
 
 	auto menuBackground = Sprite::create("CarrotGuardRes/UI/gameMenu.png");
-	menuBackground->setPosition(Vec2(_screenWidth / 2 , _screenHeight / 2 ));
+	menuBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
 	menuBackground->setScale(1.5f);
 	menuLayer->addChild(menuBackground, 0);
 
 	auto menu = Menu::create();
 	menu->setPosition(Vec2::ZERO);
-	menuLayer->addChild(menu,1);
+	menuLayer->addChild(menu, 1);
 
 	auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
-	continueButton->setPosition(Vec2(_screenWidth*0.495,_screenHeight*0.649));
+	continueButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.649));
 	continueButton->setScale(1.5);
 	auto restartButton = MenuItemImage::create("CarrotGuardRes/UI/restartNormal.png", "CarrotGuardRes/UI/restartSelected.png");
 	restartButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.51));
@@ -923,17 +960,20 @@ void GameScene::onMenuButton() {
 	// 继续游戏选项
 	continueButton->setCallback([this, menuLayer](Ref* psender) {
 		this->removeChild(menuLayer);
-		// 恢复游戏进行
-		this->scheduleUpdate();
-		// 恢复所有节点的动作
-		this->resume();
-		Director::getInstance()->resume();
+		// 判断在点击菜单按钮之前是否点击过暂停按钮，防止出现bug
+		if (getIsPaused() == 0) {
+			// 恢复游戏进行
+			this->scheduleUpdate();
+			// 恢复所有节点的动作
+			this->resume();
+			Director::getInstance()->resume();
+		}
 		});
 
 	//重新开始游戏选项
 	restartButton->setCallback([this, menuLayer](Ref* psender) {
 
-		auto gameScene = GameScene::createSceneWithLevel(1);
+		auto gameScene = GameScene::createSceneWithLevel(1, 0);
 		Director::getInstance()->replaceScene(gameScene);
 		this->removeChild(menuLayer);
 		auto runningScene = Director::getInstance()->getRunningScene();
@@ -948,6 +988,7 @@ void GameScene::onMenuButton() {
 		auto runningScene = Director::getInstance()->getRunningScene();
 		auto gameLayer = runningScene->getChildByName("layer");
 		this->removeChild(menuLayer);
+		Director::getInstance()->resume();
 		});
 
 
@@ -966,7 +1007,18 @@ void GameScene::onMenuButton() {
 
 }
 
+
 void GameScene::gameOver(int isWin) {
+	// 清空存档
+	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	if (fileUtils->isFileExist(fileUtils->getWritablePath() + path)) {
+		fileUtils->writeStringToFile(" ", fileUtils->getWritablePath() + path);
+	}
+	else {
+		CCLOG("File does not exist: %s", (fileUtils->getWritablePath() + path).c_str());
+	}
+
 	//停止游戏进行
 	this->unscheduleUpdate();
 	//停止所有节点的动作
@@ -989,12 +1041,12 @@ void GameScene::gameOver(int isWin) {
 		gameWinBackground->setScale(1.5f);
 		menuLayer->addChild(gameWinBackground, 0);
 
-		auto goldenCarrot= Sprite::create("CarrotGuardRes/UI/goldenCarrot.png");
-		goldenCarrot->setPosition(Vec2(_screenWidth *0.493, _screenHeight*0.7));
+		auto goldenCarrot = Sprite::create("CarrotGuardRes/UI/goldenCarrot.png");
+		goldenCarrot->setPosition(Vec2(_screenWidth * 0.493, _screenHeight * 0.7));
 		menuLayer->addChild(goldenCarrot, 0);
 
 		// 胜利的相关提示语
-		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum), "Arial", 32);
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum > _monsterWave ? _monsterWave : _currNum), "Arial", 32);
 		_curNumberLabel->setColor(Color3B::YELLOW);
 		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
 		Label* loseWordLeft = Label::createWithSystemFont("fought off", "Arial", 30);
@@ -1011,19 +1063,26 @@ void GameScene::gameOver(int isWin) {
 		continueButton->setScale(1.38);
 
 		continueButton->setCallback([this, menuLayer](Ref* psender) {
-			//这里写进入下一关的部分，如果到了最后一关则返回选关界面
+			if (currentLevel < 2) {
+				auto gameScene = GameScene::createSceneWithLevel(currentLevel + 1, 0);
+				Director::getInstance()->replaceScene(gameScene);
+			}
+			else {
+				auto skylineScene = SkyLineSelection::createScene();
+				Director::getInstance()->replaceScene(skylineScene);
+			}
 			});
 		menu->addChild(continueButton, 1);
 	}
 	// 游戏失败
 	else {
 		auto gameLoseBackground = Sprite::create("CarrotGuardRes/UI/LoseGame.png");
-		gameLoseBackground->setPosition(Vec2(_screenWidth / 2+ _screenWidth*0.01, _screenHeight / 2+ _screenHeight*0.015));
+		gameLoseBackground->setPosition(Vec2(_screenWidth / 2 + _screenWidth * 0.01, _screenHeight / 2 + _screenHeight * 0.015));
 		gameLoseBackground->setScale(1.5f);
 		menuLayer->addChild(gameLoseBackground, 0);
 
 		// 游戏失败的相关提示语
-		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum-1), "Arial", 32);// 暂时没搞currnum为什么会大1，所以先-1
+		_curNumberLabel = Label::createWithSystemFont(StringUtils::format("%d", _currNum - 1), "Arial", 32);// 暂时没搞currnum为什么会大1，所以先-1
 		_curNumberLabel->setColor(Color3B::YELLOW);
 		_curNumberLabel->setPosition(_screenWidth * 0.51, _screenHeight * 0.54);
 		Label* loseWordLeft = Label::createWithSystemFont("fought off", "Arial", 30);
@@ -1041,7 +1100,7 @@ void GameScene::gameOver(int isWin) {
 
 		// 重新开始按钮的选项
 		againButton->setCallback([this, menuLayer](Ref* psender) {
-			auto gameScene = GameScene::createSceneWithLevel(1);
+			auto gameScene = GameScene::createSceneWithLevel(1, 0);
 			Director::getInstance()->replaceScene(gameScene);
 			this->removeChild(menuLayer);
 			auto runningScene = Director::getInstance()->getRunningScene();
@@ -1072,6 +1131,8 @@ void GameScene::gameOver(int isWin) {
 	menu->addChild(chooseButton, 1);
 
 }
+
+
 
 // TMX point ->Screen
 // 地图格子坐标转化成屏幕坐标
@@ -1119,23 +1180,23 @@ Vec2 GameScene::LocationToTMXPos(Vec2 pos)
 // 生成怪物
 // 每波怪物5.0s，每个怪生成间隔0.5s
 void GameScene::generateMonsters() {
-	_currNum = 0;
-
+	float interval = 5.0f;
 	this->schedule([=](float dt) {
 		_currNum++;
 		if (_currNum <= _monsterWave) {
-			_curNumberLabel->setString(StringUtils::format("%d", _currNum));
 			generateMonsterWave();
-
-			if (_currNum == _monsterWave)
+			if (_currNum == _monsterWave) {
 				setIsFinalWave(1);
+
+			}
 
 		}
 		else {
 			unschedule("generateMonsters");
 		}
 
-		}, 5.0f, "generateMonsters");
+		}, interval, "generateMonsters");
+
 }
 
 // 调好了hhh,注意mutable在lambda的使用，及from++，注意每次调用的话lambda中的from都会在上一次基础上++，而不是固定的from+1，
@@ -1143,6 +1204,10 @@ void GameScene::generateMonsters() {
 void GameScene::generateMonsterWave() {
 
 	//_monsterNum;
+	if (_currNum > _monsterWave) {
+
+		return;
+	}
 	int end = _everyWave[_currNum];
 	this->schedule([=](float dt)mutable {
 		int i = 0;
@@ -1158,6 +1223,7 @@ void GameScene::generateMonsterWave() {
 					monster->setGold(monsterData->getGold());
 					monster->setSpeed(monsterData->getSpeed());
 					monster->setPointPath(_pathPoints); // 传递路径给怪物
+					monster->setName(monsterData->getName());
 					this->addChild(monster, 8);
 					monster->startMoving();
 					_monsterNum++;
@@ -1200,9 +1266,14 @@ Vector<Monster*>& GameScene::getMonsters() {
 
 void GameScene::update(float dt)
 {
-
+	// **************别动这个顺序***************
+	// 更新怪物
 	updateMonster();
-	// 先注释掉
+	// 更新存档
+	SaveGame();
+	// 更新gamemassagebuffer
+	udpserver.setGameMassageBuffer(gameMassageBuffer);
+	// 更新游戏界面
 	updateGameState();
 }
 
@@ -1241,10 +1312,11 @@ void GameScene::updateGameState()
 {
 	// 更新金币标签
 	_goldLabel->setString(StringUtils::format("%d", _goldValue));
-
+	// 更新波数标签
+	_curNumberLabel->setString(StringUtils::format("%d", _currNum > _monsterWave ? _monsterWave : _currNum));
 
 	// 增加最后一波怪物动画
-	if (_currNum == _monsterWave&&getIsFinalWave()==1) {
+	if (_currNum == _monsterWave && getIsFinalWave() == 1) {
 		auto finalWave = Sprite::create("CarrotGuardRes/UI/finalWave.png");
 		finalWave->setName("finalWave");
 		finalWave->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
@@ -1260,9 +1332,6 @@ void GameScene::updateGameState()
 		finalWave->runAction(sequence);
 		setIsFinalWave(0);
 	}
-
-	// 判断游戏是否结束：成功或失败
-	//==========待完善============
 	// 失败
 	if (getCarrotHealth() <= 0) {
 		gameOver(0);
@@ -1275,5 +1344,257 @@ void GameScene::updateGameState()
 		gameOver(1);
 		CCLOG("***************YOU WIN*******************");
 	}
+
+}
+// 要存档数据
+//int _currNum = 1;            // 当前怪物波数
+//int _goldValue = 2000;          // 玩家当前金币数量
+//int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
+//int isTurretAble[15][10];               // 可建造炮台的位置地图，并且记录位置上炮塔种类等级
+//Vector<Monster*> _currentMonsters;       // 场上现存的怪物
+//int _monsterDeath = 0;                   // 被摧毁的怪物，包括被打死的和到终点的
+//int _monsterNum = 0;             // 已经生成的怪物数量
+void GameScene::SaveGame()
+{
+	rapidjson::Document document;
+	document.SetObject();
+	document.AddMember("currentLevel", currentLevel, document.GetAllocator());
+	document.AddMember("currNum", _currNum, document.GetAllocator());
+	document.AddMember("goldValue", _goldValue, document.GetAllocator());
+	document.AddMember("carrotHealth", carrotHealth, document.GetAllocator());
+	document.AddMember("monsterDeath", _monsterDeath, document.GetAllocator());
+	document.AddMember("monsterNum", _monsterNum, document.GetAllocator());
+	rapidjson::Value monsters(rapidjson::kArrayType);
+	for (const auto& monster : _currentMonsters) {
+		if (monster == nullptr) {
+			continue;
+		}
+		rapidjson::Value monsterObject(rapidjson::kObjectType);
+		// string 写入
+		std::string monsterName = monster->getName();
+		rapidjson::Value monsterNameValue(rapidjson::kStringType);
+		monsterNameValue.SetString(monsterName.c_str(), monsterName.length(), document.GetAllocator());
+		monsterObject.AddMember("name", monsterNameValue, document.GetAllocator());
+		monsterObject.AddMember("lifeValue", monster->getLifeValue(), document.GetAllocator());
+		monsterObject.AddMember("MaxLifeValue", monster->getMaxLifeValue(), document.GetAllocator());
+		monsterObject.AddMember("gold", monster->getGold(), document.GetAllocator());
+		monsterObject.AddMember("step", monster->getStep(), document.GetAllocator());
+		monsterObject.AddMember("speed", monster->getSpeed(), document.GetAllocator());
+		monsterObject.AddMember("screen.x", monster->getPosition().x, document.GetAllocator());
+		monsterObject.AddMember("screen.y", monster->getPosition().y, document.GetAllocator());
+		monsters.PushBack(monsterObject, document.GetAllocator());
+	}
+	document.AddMember("monsters", monsters, document.GetAllocator());
+	rapidjson::Value TurretMap(rapidjson::kArrayType);
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 10; j++) {
+			rapidjson::Value isTurretAbleObject(rapidjson::kObjectType);
+			isTurretAbleObject.AddMember("x", i, document.GetAllocator());
+			isTurretAbleObject.AddMember("y", j, document.GetAllocator());
+			isTurretAbleObject.AddMember("value", isTurretAble[i][j], document.GetAllocator());
+			TurretMap.PushBack(isTurretAbleObject, document.GetAllocator());
+		}
+	}
+	document.AddMember("TurretMap", TurretMap, document.GetAllocator());
+	//****************************
+	// 有bug 内存访问错误，但是复现不出来了
+	// 
+	//****************************
+
+	rapidjson::Value bullets(rapidjson::kArrayType);
+	// 获取当前场景中的所有子节点
+	auto children = this->getChildren();
+	// 正则表达式
+	std::regex pattern(".*bullet.*");
+	for (const auto& child : children) {
+		auto sprite = dynamic_cast<Sprite*>(child);// 将child转化为Sprite类型
+		// 判断是否是子弹
+		if (sprite && std::regex_match(sprite->getName(), pattern)) {//
+			rapidjson::Value bulletObject(rapidjson::kObjectType);
+			// string 写入
+			std::string spriteName = sprite->getName();
+			rapidjson::Value spriteNameValue(rapidjson::kStringType);
+			spriteNameValue.SetString(spriteName.c_str(), spriteName.length(), document.GetAllocator());
+			bulletObject.AddMember("name", spriteNameValue, document.GetAllocator());
+			bulletObject.AddMember("screen.x", sprite->getPosition().x, document.GetAllocator());
+			bulletObject.AddMember("screen.y", sprite->getPosition().y, document.GetAllocator());
+			bulletObject.AddMember("contentSize.x", sprite->getContentSize().width, document.GetAllocator());
+			bulletObject.AddMember("contentSize.y", sprite->getContentSize().height, document.GetAllocator());
+			bullets.PushBack(bulletObject, document.GetAllocator());
+		}
+	}
+	document.AddMember("bullets", bullets, document.GetAllocator());
+
+
+
+
+	// 创建一个 rapidjson::StringBuffer 对象，用于存储 JSON 字符串
+	rapidjson::StringBuffer buffer;// StringBuffer 是一个可变的字符序列，可以像 std::string 一样使用
+	// 创建一个 rapidjson::Writer 对象，用于将 JSON 文档写入到 StringBuffer 中
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	// 将 JSON 文档写入 StringBuffer 中
+	document.Accept(writer);// Accept() 接受一个 Document 对象，将其以 JSON 格式写入到 StringBuffer 中
+	gameMassageBuffer = buffer.GetString(); // 将 StringBuffer 中的字符输出到 std::string 中
+	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	fileUtils->writeStringToFile(buffer.GetString(), fileUtils->getWritablePath() + path);
+}
+
+void GameScene::LoadSaveGame()
+{
+	// rapidjson 对象
+	rapidjson::Document document;
+
+	// 根据传递的关卡值selectLevel获得对应的关卡数据文件
+	cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+	std::string path = "Level_" + std::to_string(currentLevel) + "_save.json";
+	std::string filePath = fileUtils->getWritablePath() + path;
+
+	// 读取文件内容
+	std::string contentStr = FileUtils::getInstance()->getStringFromFile(filePath);
+	// 判断文件是否为空
+	if (contentStr.empty() || contentStr == " ") {
+		// cocos 函数不允许输入空字符串，写入一个空格，代表清空存档
+		// fileUtils->writeStringToFile(" ", fileUtils->getWritablePath() + path); 
+		CCLOG("file is empty");
+		return;
+	}
+	// 解析contentStr中json数据，并存到document中
+	document.Parse<0>(contentStr.c_str());
+
+	// 读取存档数据
+	_currNum = document["currNum"].GetInt();
+	_goldValue = document["goldValue"].GetInt();
+	carrotHealth = document["carrotHealth"].GetInt();
+	_monsterDeath = document["monsterDeath"].GetInt();
+	_monsterNum = document["monsterNum"].GetInt();
+	//  获得关卡存档的怪物
+	const rapidjson::Value& monsterArray = document["monsters"];
+	for (int i = 0; i < monsterArray.Size(); i++) {
+		// 获得每一个怪物数据
+		std::string name = monsterArray[i]["name"].GetString();
+		float lifeValue = monsterArray[i]["lifeValue"].GetFloat();
+		int MaxLifeValue = monsterArray[i]["MaxLifeValue"].GetFloat();
+		int gold = monsterArray[i]["gold"].GetInt();
+		int step = monsterArray[i]["step"].GetInt();
+		float speed = monsterArray[i]["speed"].GetFloat();
+		float screenX = monsterArray[i]["screen.x"].GetFloat();
+		float screenY = monsterArray[i]["screen.y"].GetFloat();
+		// 将数据传到MonsterData对象中
+		auto monsterData = MonsterData::create();
+		monsterData->setName(name);
+		monsterData->setCurLifeValue(lifeValue);
+		monsterData->setLifeValue(MaxLifeValue);
+		monsterData->setGold(gold);
+		monsterData->setStep(step);
+		monsterData->setSpeed(speed);
+		monsterData->setposition(Vec2(screenX, screenY));
+		// 将其传到关卡怪物集合中
+		_monsterSaveDatas.pushBack(monsterData);
+	}
+	// 更新isTurretAble数组
+	const rapidjson::Value& TurretMapArray = document["TurretMap"];
+	for (int i = 0; i < TurretMapArray.Size(); i++) {
+		int x = TurretMapArray[i]["x"].GetInt();
+		int y = TurretMapArray[i]["y"].GetInt();
+		int value = TurretMapArray[i]["value"].GetInt();
+		isTurretAble[x][y] = value;
+	}
+}
+
+void GameScene::initSaveGame()
+{
+	// 更新carrot
+	if (_carrot != nullptr && carrotHealth > 0) {
+		_carrot->setSpriteFrame(StringUtils::format("Carrot_%d.png", carrotHealth));
+	}
+	if (_carrot != nullptr && carrotHealth <= 0) {
+		_carrot->removeFromParent();
+	}
+	// 加载turret
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 10; j++) {
+			// 判断当前位置是否有炮塔
+			if (isTurretAble[i][j] / 10 != 0) {
+				// 获取当前炮塔种类
+				TurretData* turretData = nullptr;
+				int count = 1;
+				for (const auto& temp : _turretDatas) {
+					if (count >= isTurretAble[i][j] / 10) {
+						turretData = temp;
+						break;
+					}
+					count++;
+				}
+				Turret* turret = nullptr;
+				if (isTurretAble[i][j] / 10 == 1) {
+					turret = Turret_TB::createWithSpriteFrameName("TB", isTurretAble[i][j] % 10);
+					turret->setName("TB");
+					turret->setLevel(isTurretAble[i][j] % 10);
+
+				}
+				else if (isTurretAble[i][j] / 10 == 2) {
+					turret = Turret_TSun::createWithSpriteFrameName("TSun", isTurretAble[i][j] % 10);
+					turret->setName("TSun");
+					turret->setLevel(isTurretAble[i][j] % 10);
+
+				}
+				else if (isTurretAble[i][j] / 10 == 3) {
+					turret = Turret_TFan::createWithSpriteFrameName("TFan", isTurretAble[i][j] % 10);
+					turret->setName("TFan");
+					turret->setLevel(isTurretAble[i][j] % 10);
+
+				}
+				turret->setTag(i * 1000 + j);
+				turret->setPosition(TMXPosToLocation(Vec2(i, j)));
+				turret->setCost1(turretData->getCost1());
+				turret->setCost2(turretData->getCost2());
+				turret->setCost3(turretData->getCost3());
+				turret->setDamage(turretData->getDamage());
+				turret->setRange(turretData->getRange());
+				// 更改伤害范围
+				for (int i = 1; i < turret->getLevel(); i++) {
+					turret->setDamage(turret->getDamage() * 2.0);
+					turret->setRange(turret->getRange() * 2.0);
+				}
+				turret->setLevel(isTurretAble[i][j] % 10);
+				//turret->init();
+				this->addChild(turret, 10);
+				_currentTurrets.pushBack(turret);
+			}
+		}
+	}
+	// 加载怪物
+	for (const auto& monsterData : _monsterSaveDatas) {
+		auto monster = Monster::createWithSpriteFrameName(monsterData->getName());
+		_currentMonsters.pushBack(monster);
+		// 锚点设为中心
+		monster->setAnchorPoint(Vec2(0.5f, 0.5f));
+		monster->setMaxLifeValue(monsterData->getLifeValue());
+		monster->setLifeValue(monsterData->getCurLifeValue());
+		monster->setGold(monsterData->getGold());
+		monster->setSpeed(monsterData->getSpeed());
+		monster->setPointPath(_pathPoints); // 传递路径给怪物
+		monster->setName(monsterData->getName());
+		monster->setPosition(monsterData->getposition());
+		monster->setStep(monsterData->getStep());
+		monster->setHP();
+		this->addChild(monster, 8);
+		//monster->startMoving();
+
+	}
+}
+
+void GameScene::beganSaveGame()
+{
+	for (auto turret : _currentTurrets)
+	{
+		turret->init();
+	}
+	for (auto monster : _currentMonsters) {
+		monster->startMoving();
+	}
+	// 生成这波没生成完的怪物
+	generateMonsterWave();
 }
 

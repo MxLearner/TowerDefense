@@ -14,14 +14,14 @@ USING_NS_CC;
 
 class AdvantureScene : public Layer {
 public:
-    static Scene* createScene();
-    virtual bool init();
+	static Scene* createScene();
+	virtual bool init();
 
-    void ToMenuScene(Ref* pSender);
-    void ToSkyLineSelection(Ref* pSender);
+	void ToMenuScene(Ref* pSender);
+	void ToSkyLineSelection(Ref* pSender);
 
-    // implement the "static create()" method manually
-    CREATE_FUNC(AdvantureScene);
+	// implement the "static create()" method manually
+	CREATE_FUNC(AdvantureScene);
 
 
 };

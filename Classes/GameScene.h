@@ -11,6 +11,11 @@
 #include"TurretData.h"
 #include"MonsterData.h"
 #include"json/document.h"
+#include "json/writer.h"
+#include "json/stringbuffer.h"
+#include"server.h"
+#include"client.h"
+
 
 USING_NS_CC;
 
@@ -22,7 +27,7 @@ protected:
 	float _screenWidth, _screenHeight;  //屏幕宽高
 
 	// 初始化参数
-	int _currNum = 1;            // 当前怪物波数
+	int _currNum = 0;            // 当前怪物波数
 	int _goldValue = 2000;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
@@ -47,6 +52,7 @@ protected:
 	int _isPaused = 0;                       // 标记当前游戏是否暂停
 	int _isFinalWave = 0;                   // 标记当前游戏是否是最后一波怪物
 
+
 	// 顶部标签
 	Label* _numberLabel;                  // 显示怪物波数
 	Label* _curNumberLabel;               // 显示当前怪物波数
@@ -59,22 +65,28 @@ protected:
 	Layer* touchLayer;				//用于建造升级出售界面的层
 	EventListenerMouse* touchListener;//用于建造升级出售界面的监听器
 
-
 	// 用于保存游戏进度
 	int _monsterNum = 0;             // 已经生成的怪物数量
+	Vector<MonsterData*> _monsterSaveDatas;   // 当前关卡存档怪物信息
+	std::string gameMassageBuffer; // 用于存档的json
+	// 联机服务端
+	UDPServer udpserver;
+	std::mutex serverMutex; // 互斥锁
+
 
 public:
-
+	//
+	//~GameScene();
 	// 根据关卡编号创建游戏关卡场景
-	static Scene* createSceneWithLevel(int selectLevel);
+	static Scene* createSceneWithLevel(int selectLevel, int isSave);
 	// 关卡场景初始化
 	virtual bool init();
 	// 获取json关卡数据
-	void LoadLevelData();
+	virtual void LoadLevelData();
 	// 关卡初始化，加载地图，萝卜 ，初始化可见炮塔数组
-	void initLevel();
+	virtual void initLevel();
 	// 屏幕顶部标签
-	void TopLabel();
+	virtual void TopLabel();
 	// 游戏中的菜单选项
 	void onMenuButton();
 	// 游戏中的暂停按钮选项
@@ -83,6 +95,7 @@ public:
 	void onSpeedButton(Ref* pSender);
 	// 游戏结束
 	void gameOver(int isWin);
+
 	// 开始时倒计时，也可用于暂停后重新开始
 	void CountDown();
 
@@ -189,23 +202,43 @@ public:
 	EventListenerMouse* getTouchListener() {
 		return touchListener;
 	}
+	// 二倍速
 	void setIsDoubleSpeed(int option) {
 		_isDoubleSpeed = option;
 	}
+
 	int getIsDoubleSpeed() {
 		return _isDoubleSpeed;
 	}
+	// 暂停
 	void setIsPaused(int option) {
 		_isPaused = option;
 	}
 	int getIsPaused() {
 		return _isPaused;
 	}
+	// 最后一波
 	void setIsFinalWave(int option) {
 		_isFinalWave = option;
 	}
 	int getIsFinalWave() {
 		return _isFinalWave;
+	}
+	// 存档
+	void SaveGame();
+	// 读取存档
+	void LoadSaveGame();
+	// 读取存档后的初始化
+	void initSaveGame();
+	// 开始存档游戏
+	void beganSaveGame();
+
+	// 服务器端
+	void startServer();
+	//
+	void onExit() {
+		udpserver.Stop();
+		Layer::onExit();
 	}
 
 	CREATE_FUNC(GameScene);

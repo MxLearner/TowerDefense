@@ -36,6 +36,7 @@ void Turret_TSun::ShootBullet()
 		auto bullet = Bullet::createWithSpriteFrameName(bulletName);
 		bullet->setDamage(_damage);
 		bullet->setPosition(getPosition());
+		bullet->setName(bulletName);
 		Vec2 temp = bullet->getPosition();
 		getParent()->addChild(bullet, 9); // 位置比塔基低一层这样可以盖住
 		bullet->setContentSize(Size(0, 0));

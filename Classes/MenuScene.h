@@ -17,13 +17,14 @@ public:
 	static Scene* createScene();
 	virtual bool init();
 
-    // a selector callback
-    void menuCloseCallback(Ref* pSender);
-    void ToAdvantureScene(Ref* pSender);
-    void ToSettingScene(Ref* pSender);
+	// a selector callback
+	void menuCloseCallback(Ref* pSender);
+	void ToAdvantureScene(Ref* pSender);
+	void ToSettingScene(Ref* pSender);
+	void ToClientGameScene(Ref* pSender);
 
-    // implement the "static create()" method manually
-    CREATE_FUNC(MenuScene);
+	// implement the "static create()" method manually
+	CREATE_FUNC(MenuScene);
 
 
 };

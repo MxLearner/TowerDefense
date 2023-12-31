@@ -18,6 +18,7 @@ private:
 	int _curLifeValue;    // 怪物当前生命
 	Vec2 _position;      // 位置
 	int _step;             // 已走步数
+	Vec2 position;		// 位置
 
 
 public:
@@ -62,6 +63,22 @@ public:
 		return _speed;
 	}
 
-
-
+	void setCurLifeValue(int curLifeValue) {
+		_curLifeValue = curLifeValue;
+	}
+	int getCurLifeValue() {
+		return _curLifeValue;
+	}
+	void setposition(Vec2 position) {
+		_position = position;
+	}
+	Vec2 getposition() {
+		return _position;
+	}
+	void setStep(int step) {
+		_step = step;
+	}
+	int getStep() {
+		return _step;
+	}
 };

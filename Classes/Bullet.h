@@ -10,7 +10,7 @@ USING_NS_CC;
 // 子弹类
 class Bullet :public Sprite {
 private:
-	int _damage=1 ;     // 攻击力
+	int _damage = 1;     // 攻击力
 
 public:
 	static Bullet* createWithSpriteFrameName(const std::string& filename) {
@@ -27,7 +27,7 @@ public:
 
 	// set get 
 	void setDamage(int damage) {
-		_damage =damage;
+		_damage = damage;
 	}
 	int getDamage() {
 		return _damage;

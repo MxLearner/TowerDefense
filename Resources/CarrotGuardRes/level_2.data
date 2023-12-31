@@ -1,5 +1,5 @@
 {
-  "tileFile": "CarrotGuardRes/LeveL_1.tmx",
+  "tileFile": "CarrotGuardRes/LeveL_2.tmx",
   "monsterAll": 15,
   "monsterWave": 3,
   "everyWave": [
@@ -10,7 +10,7 @@
   ],
   "monsters": [
     {
-      "name": "Monster_2.png",
+      "name": "Monster_1.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
@@ -40,7 +40,19 @@
       "speed": 1
     },
     {
-      "name": "Monster_1.png",
+      "name": "Monster_2.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },
+    {
+      "name": "Monster_2.png",
+      "lifeValue": 10,
+      "gold": 15,
+      "speed": 1
+    },
+    {
+      "name": "Monster_2.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
@@ -58,7 +70,7 @@
       "speed": 1
     },
     {
-      "name": "Monster_1.png",
+      "name": "Monster_3.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
@@ -70,25 +82,13 @@
       "speed": 1
     },
     {
-      "name": "Monster_1.png",
+      "name": "Monster_3.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
     },
     {
-      "name": "Monster_1.png",
-      "lifeValue": 10,
-      "gold": 15,
-      "speed": 1
-    },
-    {
-      "name": "Monster_1.png",
-      "lifeValue": 10,
-      "gold": 15,
-      "speed": 1
-    },
-    {
-      "name": "Monster_1.png",
+      "name": "Monster_3.png",
       "lifeValue": 10,
       "gold": 15,
       "speed": 1
@@ -129,75 +129,171 @@
   "path": [
     {
       "x": 0,
-      "y": 6
+      "y": 2
     },
     {
       "x": 1,
-      "y": 6
+      "y": 2
     },
     {
       "x": 2,
-      "y": 6
+      "y": 2
     },
     {
       "x": 3,
-      "y": 6
+      "y": 2
     },
     {
       "x": 4,
-      "y": 6
+      "y": 2
     },
     {
       "x": 5,
-      "y": 6
+      "y": 2
     },
     {
       "x": 6,
-      "y": 6
+      "y": 2
     },
     {
       "x": 7,
-      "y": 6
+      "y": 2
     },
     {
       "x": 8,
-      "y": 6
+      "y": 2
     },
     {
       "x": 9,
-      "y": 6
-    },
-    {
-      "x": 9,
-      "y": 5
-    },
-    {
-      "x": 9,
-      "y": 4
-    },
-    {
-      "x": 9,
-      "y": 3
+      "y": 2
     },
     {
       "x": 10,
-      "y": 3
+      "y": 2
     },
     {
       "x": 11,
-      "y": 3
+      "y": 2
     },
     {
       "x": 12,
-      "y": 3
+      "y": 2
+    },
+    {
+      "x": 13,
+      "y": 2
     },
     {
       "x": 13,
       "y": 3
     },
     {
-      "x": 14,
-      "y": 3
+      "x": 13,
+      "y": 4
+    },
+    {
+      "x": 13,
+      "y": 5
+    },
+    {
+      "x": 13,
+      "y": 6
+    },
+    {
+      "x": 13,
+      "y": 7
+    },
+    {
+      "x": 13,
+      "y": 8
+    },
+    {
+      "x": 12,
+      "y": 8
+    },
+    {
+      "x": 11,
+      "y": 8
+    },
+    {
+      "x": 10,
+      "y": 8
+    },
+    {
+      "x": 9,
+      "y": 8
+    },
+    {
+      "x": 8,
+      "y": 8
+    },
+    {
+      "x": 7,
+      "y": 8
+    },
+    {
+      "x": 6,
+      "y": 8
+    },
+    {
+      "x": 5,
+      "y": 8
+    },
+    {
+      "x": 4,
+      "y": 8
+    },
+    {
+      "x": 3,
+      "y": 8
+    },
+    {
+      "x": 2,
+      "y": 8
+    },
+    {
+      "x": 2,
+      "y": 7
+    },
+    {
+      "x": 2,
+      "y": 6
+    },
+    {
+      "x": 2,
+      "y": 5
+    },
+    {
+      "x": 3,
+      "y": 5
+    },
+    {
+      "x": 4,
+      "y": 5
+    },
+    {
+      "x": 5,
+      "y": 5
+    },
+    {
+      "x": 6,
+      "y": 5
+    },
+    {
+      "x": 7,
+      "y": 5
+    },
+    {
+      "x": 8,
+      "y": 5
+    },
+    {
+      "x": 9,
+      "y": 5
+    },
+    {
+      "x": 10,
+      "y": 5
     }
   ]
 }
