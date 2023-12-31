@@ -81,7 +81,8 @@ bool SkyLineSelection::init() {
 	std::vector<std::string> mapImages = {
 		"CarrotGuardRes/UI/SkyLineLevel_1.png",
 		"CarrotGuardRes/UI/SkyLineLevel_2.png",
-		"CarrotGuardRes/UI/SkyLineLevel_3.png"
+		"CarrotGuardRes/UI/SkyLineLevel_3.png",
+		"CarrotGuardRes/UI/SkyLineLevel_4.png"
 	};
 
 
@@ -92,6 +93,7 @@ bool SkyLineSelection::init() {
 		ImageView* imageView = ImageView::create(mapImages[i]);
 		imageView->setContentSize(Size(screenSize.width, screenSize.height));
 		imageView->setPosition(Vec2(layout->getContentSize().width / 2, layout->getContentSize().height / 2));
+		imageView->setScale(2.0f);
 		layout->addChild(imageView, 1);
 		pageView->addPage(layout);
 	}
@@ -103,31 +105,41 @@ bool SkyLineSelection::init() {
 			PageView* pageView = dynamic_cast<PageView*>(pSender);
 			int currentIndex = pageView->getCurrentPageIndex();
 
-			// 创建确认按钮
-			auto confirmButton = Button::create("CarrotGuardRes/UI/SettingNormal.png");  // 替换成你的按钮图片
-			confirmButton->setPosition(Vec2(screenSize.width / 2, screenSize.height / 2 + 100));
-			confirmButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
-				if (type == Widget::TouchEventType::ENDED) {
-					// 载入存档，tmp=1
-					int tmp = 1;
-					auto gameScene = GameScene::createSceneWithLevel(currentIndex + 1, tmp);
-					Director::getInstance()->replaceScene(gameScene);
-				}
-				});
-			this->addChild(confirmButton);
+			if (currentIndex < 2) {
+				// 创建确认按钮
+				auto confirmButton = Button::create("CarrotGuardRes/UI/fileNormal.png", "CarrotGuardRes/UI/fileSelected.png");  // 替换成你的按钮图片
+				confirmButton->setName("confirmButton");
+				confirmButton->setPosition(Vec2(screenSize.width * 0.6, screenSize.height * 0.13));
+				confirmButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
+					if (type == Widget::TouchEventType::ENDED) {
+						// 载入存档，tmp=1
+						int tmp = 1;
+						auto gameScene = GameScene::createSceneWithLevel(currentIndex + 1, tmp);
+						Director::getInstance()->replaceScene(gameScene);
+					}
+					});
+				this->addChild(confirmButton);
 
-			// 创建取消按钮
-			auto cancelButton = Button::create("CarrotGuardRes/UI/SettingNormal.png");  // 替换成你的按钮图片
-			cancelButton->setPosition(Vec2(screenSize.width / 2, screenSize.height / 2 - 100));  // 调整位置
-			cancelButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
-				if (type == Widget::TouchEventType::ENDED) {
-					// 不载入存档，tmp=0
-					int tmp = 0;
-					auto gameScene = GameScene::createSceneWithLevel(currentIndex + 1, tmp);
-					Director::getInstance()->replaceScene(gameScene);
-				}
-				});
-			this->addChild(cancelButton);
+				// 创建取消按钮
+				auto cancelButton = Button::create("CarrotGuardRes/UI/startNormal.png", "CarrotGuardRes/UI/startSelected.png");  // 替换成你的按钮图片
+				cancelButton->setName("cancelButton");
+				cancelButton->setPosition(Vec2(screenSize.width * 0.4, screenSize.height * 0.13));  // 调整位置
+				cancelButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
+					if (type == Widget::TouchEventType::ENDED) {
+						// 不载入存档，tmp=0
+						int tmp = 0;
+						auto gameScene = GameScene::createSceneWithLevel(currentIndex + 1, tmp);
+						Director::getInstance()->replaceScene(gameScene);
+					}
+					});
+				this->addChild(cancelButton);
+			}
+			else {
+				auto lockedButton = Button::create("CarrotGuardRes/UI/locked.png");  // 替换成你的按钮图片
+				lockedButton->setName("lockedButton");
+				lockedButton->setPosition(Vec2(screenSize.width * 0.5, screenSize.height * 0.13));  // 调整位置
+				this->addChild(lockedButton);
+			}
 
 		}
 		});
@@ -138,9 +150,19 @@ bool SkyLineSelection::init() {
 	leftButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 		if (type == Widget::TouchEventType::ENDED) {
 			int currentIndex = pageView->getCurrentPageIndex();
-			CCLOG("currentIndex:  %d", currentIndex);
 			if (currentIndex > 0) {
 				pageView->scrollToPage(currentIndex - 1);
+
+				//消除上一页地图的选择按钮
+				auto confirm = this->getChildByName("confirmButton");
+				auto cancel = this->getChildByName("cancelButton");
+				auto locked = this->getChildByName("lockedButton");
+				if (confirm && cancel) {
+					this->removeChildByName("confirmButton");
+					this->removeChildByName("cancelButton");
+				}
+				if(locked)
+					this->removeChildByName("lockedButton");
 			}
 		}
 		});
@@ -153,9 +175,18 @@ bool SkyLineSelection::init() {
 			int currentIndex = pageView->getCurrentPageIndex();
 			if (currentIndex < 0)
 				currentIndex = 0;  //  未知原因导致开始的时候index是-1，暂时像这样处理。
-			CCLOG("currentIndex:  %d", currentIndex);
 			if (currentIndex < mapImages.size() - 1) {
 				pageView->scrollToPage(currentIndex + 1);
+
+				auto confirm = this->getChildByName("confirmButton");
+				auto cancel = this->getChildByName("cancelButton");
+				auto locked = this->getChildByName("lockedButton");
+				if (confirm && cancel) {
+					this->removeChildByName("confirmButton");
+					this->removeChildByName("cancelButton");
+				}
+				if (locked)
+					this->removeChildByName("lockedButton");
 			}
 		}
 		});

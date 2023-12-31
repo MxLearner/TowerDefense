@@ -9,6 +9,7 @@ static void problemLoading(const char* filename)
 	printf("Error while loading: %s\n", filename);
 }
 
+static int ALLGAMESAVE = 0;
 Scene* MenuScene::createScene()
 {
 	auto scene = Scene::create();
@@ -25,7 +26,13 @@ bool MenuScene::init() {
 	auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-
+	if (ALLGAMESAVE == 0) {
+		// 记录关卡是否通关,随便写写
+		cocos2d::FileUtils* fileUtils = cocos2d::FileUtils::getInstance();
+		std::string path = "AllGameSave.json";
+		fileUtils->writeStringToFile("100000000000000000000000", fileUtils->getWritablePath() + path);
+		ALLGAMESAVE = 1;
+	}
 
 	//添加背景图片
 	auto backgroundImage = Sprite::create("CarrotGuardRes/UI/BasicBackground.png");
@@ -139,17 +146,7 @@ bool MenuScene::init() {
 	}
 
 
-
-
-	/*auto advantureButton = Button::create("AdvantureButtonNormal.png");
-	advantureButton->setPosition(Vec2(visibleSize.width * 30 / 100.0, visibleSize.height * 25 / 100.0));
-
-	advantureButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
-		MenuScene::ToAdvantureScene;
-		});*/
-
-
-		//添加冒险模式按钮
+	//添加冒险模式按钮
 	auto advantureButton = MenuItemImage::create("CarrotGuardRes/UI/AdvantureButtonNormal.png", "CarrotGuardRes/UI/AdvantureButtonSelected.png", CC_CALLBACK_1(MenuScene::ToAdvantureScene, this));
 	if (advantureButton == nullptr ||
 		advantureButton->getContentSize().width <= 0 ||
@@ -177,26 +174,26 @@ bool MenuScene::init() {
 	else
 	{
 		float x = visibleSize.width * 0.5;
-		float y = visibleSize.height * 0.15;
+		float y = visibleSize.height * 0.14;
 		bossButton->setPosition(Vec2(x, y));
 		bossButton->setScale(backgroundScale);
 		menu->addChild(bossButton);
 	}
-	//添加怪物超按钮
-	auto netButton = MenuItemImage::create("CarrotGuardRes/UI/NetButtonNormal.png", "CarrotGuardRes/UI/NetButtonSelected.png", CC_CALLBACK_1(MenuScene::ToClientGameScene, this));
-	if (netButton == nullptr ||
-		netButton->getContentSize().width <= 0 ||
-		netButton->getContentSize().height <= 0)
+	//添加观战模式按钮
+	auto witnessButton = MenuItemImage::create("CarrotGuardRes/UI/WitnessButtonNormal.png", "CarrotGuardRes/UI/WitnessButtonSelected.png", CC_CALLBACK_1(MenuScene::ToClientGameScene, this));
+	if (witnessButton == nullptr ||
+		witnessButton->getContentSize().width <= 0 ||
+		witnessButton->getContentSize().height <= 0)
 	{
-		problemLoading("'CarrotGuardRes/UI/NetButtonNormal.png'and 'CarrotGuardRes/UI/NetButtonSelected.png'");
+		problemLoading("'CarrotGuardRes/UI/WitnessButtonNormal.png'and 'CarrotGuardRes/UI/WitnessButtonSelected.png'");
 	}
 	else
 	{
 		float x = visibleSize.width * 0.8;
 		float y = visibleSize.height * 0.15;
-		netButton->setPosition(Vec2(x, y));
-		netButton->setScale(backgroundScale);
-		menu->addChild(netButton);
+		witnessButton->setPosition(Vec2(x, y));
+		witnessButton->setScale(1.5 * backgroundScale);
+		menu->addChild(witnessButton);
 	}
 
 	//设置界面按钮
@@ -235,9 +232,9 @@ void MenuScene::ToSettingScene(Ref* pSender) {
 }
 
 void MenuScene::ToClientGameScene(Ref* pSender) {
-	auto netScene = ClientGameScene::createScene();
-	if (netScene != nullptr) {
-		Director::getInstance()->pushScene(netScene);
+	auto witnessScene = ClientGameScene::createScene();
+	if (witnessScene != nullptr) {
+		Director::getInstance()->pushScene(witnessScene);
 
 	}
 }

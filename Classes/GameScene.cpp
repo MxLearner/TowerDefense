@@ -8,7 +8,7 @@
 using namespace ui;
 USING_NS_CC;
 
-static int currentLevel = 2;  // 当前关卡
+static int currentLevel = 0;  // 当前关卡
 static int  IS_LOAD_SAVE_GAME = 1; // 是否加载存档
 
 static int IS_BEGAN_SERVER = 1;// 是否开启联机，设置默认开启吧，不然还要加个按钮
@@ -806,11 +806,11 @@ void GameScene::CountDown()
 	count3->setVisible(false);
 	count0->setVisible(false);
 
-	this->addChild(countBackground, 20);
-	this->addChild(count1, 20);
-	this->addChild(count2, 20);
-	this->addChild(count3, 20);
-	this->addChild(count0, 20);
+	this->addChild(countBackground, 2);
+	this->addChild(count1, 2);
+	this->addChild(count2, 2);
+	this->addChild(count3, 2);
+	this->addChild(count0, 2);
 
 	//存档怪物的回调函数
 	auto baginSaveGame = CallFunc::create([=] {
@@ -960,11 +960,14 @@ void GameScene::onMenuButton() {
 	// 继续游戏选项
 	continueButton->setCallback([this, menuLayer](Ref* psender) {
 		this->removeChild(menuLayer);
-		// 恢复游戏进行
-		this->scheduleUpdate();
-		// 恢复所有节点的动作
-		this->resume();
-		Director::getInstance()->resume();
+		// 判断在点击菜单按钮之前是否点击过暂停按钮，防止出现bug
+		if (getIsPaused() == 0) {
+			// 恢复游戏进行
+			this->scheduleUpdate();
+			// 恢复所有节点的动作
+			this->resume();
+			Director::getInstance()->resume();
+		}
 		});
 
 	//重新开始游戏选项
@@ -985,6 +988,7 @@ void GameScene::onMenuButton() {
 		auto runningScene = Director::getInstance()->getRunningScene();
 		auto gameLayer = runningScene->getChildByName("layer");
 		this->removeChild(menuLayer);
+		Director::getInstance()->resume();
 		});
 
 
@@ -1032,6 +1036,22 @@ void GameScene::gameOver(int isWin) {
 
 	// 游戏胜利
 	if (isWin) {
+		//解锁下一关
+		std::string content;
+
+		// 使用FileUtils获取文件数据
+		FileUtils* fileUtils = FileUtils::getInstance();
+		std::string filePath = fileUtils->getWritablePath() + "AllGameSave.json";
+		if (fileUtils->isFileExist(filePath)) {
+			// 读取文件内容
+			content = fileUtils->getStringFromFile(filePath);
+		}
+		else {
+			CCLOG("File not found: %s", filePath.c_str());
+		}
+		content[currentLevel] = '1';
+		fileUtils->writeStringToFile(content, filePath);
+		//
 		auto gameWinBackground = Sprite::create("CarrotGuardRes/UI/WinGame.png");
 		gameWinBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
 		gameWinBackground->setScale(1.5f);
@@ -1059,7 +1079,14 @@ void GameScene::gameOver(int isWin) {
 		continueButton->setScale(1.38);
 
 		continueButton->setCallback([this, menuLayer](Ref* psender) {
-			//这里写进入下一关的部分，如果到了最后一关则返回选关界面
+			if (currentLevel < 2) {
+				auto gameScene = GameScene::createSceneWithLevel(currentLevel + 1, 0);
+				Director::getInstance()->replaceScene(gameScene);
+			}
+			else {
+				auto skylineScene = SkyLineSelection::createScene();
+				Director::getInstance()->replaceScene(skylineScene);
+			}
 			});
 		menu->addChild(continueButton, 1);
 	}
