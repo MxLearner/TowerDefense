@@ -229,9 +229,9 @@ void GameScene::onMouseDown(EventMouse* event)
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
 
 	//获取当前建造界面是否激活
-	int b = getHasBuild();
+	int hasBuild = getHasBuild();
 	//获取当前升级界面是否激活
-	int u = getHasUpgrade();
+	int hasUpgrade = getHasUpgrade();
 
 	// 判断点击萝卜事件
 	int currentTag = 1000 * mapX + mapY;
@@ -246,11 +246,11 @@ void GameScene::onMouseDown(EventMouse* event)
 
 	// 地图上可以建造时
 	if (isTurretAble[mapX][mapY] == 0) {
-		if (!u)//这样防止在升级塔的时候误触旁边的空地
+		if (!hasUpgrade)//这样防止在升级塔的时候误触旁边的空地
 			TouchLand(event);
 	}
 	else if (isTurretAble[mapX][mapY] != 0 && isTurretAble[mapX][mapY] != 1) {
-		if (!b)//这样防止在建造塔的时候误触旁边的塔
+		if (!hasBuild)//这样防止在建造塔的时候误触旁边的塔
 			TouchTower(event);
 	}
 
@@ -258,7 +258,6 @@ void GameScene::onMouseDown(EventMouse* event)
 }
 
 void GameScene::TouchLand(EventMouse* event) {
-	//***************建两个塔，先点左边再点右边，再点右边的空地，不要见他，再点右边的空地，会出现touchlayer空(最近没有发现
 
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
@@ -273,10 +272,10 @@ void GameScene::TouchLand(EventMouse* event) {
 
 
 	//获取当前建造界面是否激活
-	int b = getHasBuild();
+	int hasBuild = getHasBuild();
 
 	//如果没有激活建造界面
-	if (!b) {
+	if (!hasBuild) {
 		//创建新的触摸层和监听器
 		createTouchLayer();
 		createTouchListener();
@@ -286,7 +285,7 @@ void GameScene::TouchLand(EventMouse* event) {
 	auto touch_listener = getTouchListener();
 
 	//将新的触摸层添加到场景当中
-	if (!b)
+	if (!hasBuild)
 		this->addChild(touch_layer, 10);
 
 
@@ -301,7 +300,7 @@ void GameScene::TouchLand(EventMouse* event) {
 	//定义三种防御塔的建造成本
 	int TB_Cost{}, TFan_Cost{}, TSun_Cost{};
 
-	if (!b) {
+	if (!hasBuild) {
 		//由地图坐标再转化为屏幕坐标，保证同一地图坐标建造时屏幕坐标相同
 		screenPos = TMXPosToLocation(mapPos);
 		//定义在迭代器中的计数标签
@@ -325,7 +324,7 @@ void GameScene::TouchLand(EventMouse* event) {
 		}
 
 		//根据当前的金币情况来设置建造防御塔的图标
-		if (_goldValue >= TB_Cost) {//******************时不时会说没有初始化内存
+		if (_goldValue >= TB_Cost) {
 			TB_Can->setPosition(screenPos.x - _screenWidth * 0.05, screenPos.y);
 			TB_Can->setVisible(true);
 			touch_layer->addChild(TB_Can);
@@ -372,7 +371,7 @@ void GameScene::TouchLand(EventMouse* event) {
 	TSun = (Sprite*)touch_layer->getChildByName("TSun_Can");
 
 	//记录当前点击事件，可以用于后续获得防御塔建造的位置
-	if (!b) {
+	if (!hasBuild) {
 		EventMouse* temp = new EventMouse(*event);
 		setBuildEvent(temp);
 	}
@@ -425,7 +424,7 @@ void GameScene::TouchLand(EventMouse* event) {
 		//表示建造界面已销毁
 		setHasBuild(0);
 		};
-	if (!b)
+	if (!hasBuild)
 		_eventDispatcher->addEventListenerWithSceneGraphPriority(touch_listener, this);
 
 }
@@ -463,7 +462,7 @@ void GameScene::BuildTower(EventMouse* event, int numTower) {
 			count++;
 		}
 
-
+		//根据当前塔的类型进行对应的建造
 		Turret* turret;
 		if (numTower == 1) {
 			turret = Turret_TB::createWithSpriteFrameName(name, 1);
@@ -474,25 +473,26 @@ void GameScene::BuildTower(EventMouse* event, int numTower) {
 		else {
 			turret = Turret_TFan::createWithSpriteFrameName(name, 1);
 		}
-		_goldValue -= buildCost;//****************************************************时不时说没有初始化内存
+		
+		_goldValue -= buildCost;
 		turret->setCost1(turretData->getCost1());
 		turret->setCost2(turretData->getCost2());
 		turret->setCost3(turretData->getCost3());
 		turret->setDamage(turretData->getDamage());
 		turret->setRange(turretData->getRange());
-
+		//将新建的塔放入当前场景的塔的集合中
 		_currentTurrets.pushBack(turret);
 		turret->setName(name);
 		screenPos = TMXPosToLocation(mapPos);
 		turret->setPosition(screenPos);
-		//
+		
 		turret->setTag(mapX * 1000 + mapY);
 		turret->init();
 		this->addChild(turret, 10);
 	}
 }
 
-void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成三个塔，第三个塔升级的时候会出bug，哪份distance是空的（应该是怪刚刚死的时候点升级
+void GameScene::TouchTower(EventMouse* event) {
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -505,9 +505,9 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 	// 地图上可以建造时
 
 	//获取当前升级事件是否激活
-	int u = getHasUpgrade();
+	int hasUpgrade = getHasUpgrade();
 
-	if (!u) {
+	if (!hasUpgrade) {
 		//创建新的触摸层和触摸监听器
 		createTouchLayer();
 		createTouchListener();
@@ -515,7 +515,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 	auto touch_layer = getTouchLayer();
 	auto touch_listener = getTouchListener();
 
-	if (!u)
+	if (!hasUpgrade)
 		this->addChild(touch_layer, 10);
 
 	//添加关于升级出售的精灵
@@ -528,7 +528,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 	//获得当前准备升级出售的塔的相关信息
 	Turret* currentTower;
 	float currentRange;
-	int currentGrade, currentCost;//*************************思考下扣钱放在点击塔还是升级塔里面
+	int currentGrade, currentCost;
 
 	//currentGrade = 3;
 	std::string currentName;
@@ -537,6 +537,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 	currentName = currentTower->getName();
 	currentGrade = isTurretAble[mapX][mapY] % 10;
 
+	//获得对应塔的升级花费
 	switch (currentGrade) {
 	case 1:
 		currentCost = currentTower->getCost2();
@@ -550,14 +551,15 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 	}
 
 
-	if (!u) {
+	if (!hasUpgrade) {
+		//设置升级时的圆形范围
 		screenPos = TMXPosToLocation(mapPos);
 		circle->setVisible(true);
 		circle->setPosition(screenPos);
 		circle->setScale(2 * currentRange / circle->getContentSize().width);
 		circle->setName("circle");
 		touch_layer->addChild(circle);
-
+		//设置对应升级图标
 		if (currentGrade < 3) {
 			if (_goldValue >= currentCost) {
 				upgrade_can->setVisible(true);
@@ -572,6 +574,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 				touch_layer->addChild(upgrade_not);
 			}
 		}
+		//当前已升到顶级
 		else {
 			upgrade_max->setVisible(true);
 			upgrade_max->setPosition(screenPos.x + _screenWidth * 0.004, screenPos.y + _screenHeight * 0.1);
@@ -585,33 +588,33 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 		touch_layer->addChild(sale);
 	}
 
-
+	//获取当前界面升级出售相关的元素
 	Sprite* Circle, * UpgradeCan, * Sale;
 	Circle = (Sprite*)touch_layer->getChildByName("circle");
 	UpgradeCan = (Sprite*)touch_layer->getChildByName("upgrade_can");
 	Sale = (Sprite*)touch_layer->getChildByName("sale");
 
-	if (!u) {
+	if (!hasUpgrade) {
 		EventMouse* temp = new EventMouse(*event);
 		setBuildEvent(temp);
 	}
 	setHasUpgrade(1);
 	EventMouse* buildTower = getBuildEvent();
 	touch_listener->onMouseDown = [this, Circle, UpgradeCan, Sale, &screenPos, mapPos, touch_layer, touch_listener, buildTower, currentCost](EventMouse* event) {
-		// 若按下位置在第一个炮塔图标内
 
 		Vec2 clickPos = event->getLocation();
 		Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
 
+		//点击升级按钮
 		if ((UpgradeCan) && UpgradeCan->getBoundingBox().containsPoint(screenPos)) {//短路求值来判断是否为可以点击按钮
 			_eventDispatcher->removeEventListener(touch_listener);
 			UpgradeTower(buildTower);
 			_goldValue -= currentCost;
-			//update(0);
 			this->removeChild(touch_layer);
 			removeTouchLayer();
 			removeTouchListener();
 		}
+		//点击出售按钮
 		else if ((Sale) && Sale->getBoundingBox().containsPoint(screenPos)) {
 			_eventDispatcher->removeEventListener(touch_listener);
 			SaleTower(buildTower);
@@ -619,6 +622,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 			removeTouchLayer();
 			removeTouchListener();
 		}
+		//点击其他部分
 		else {
 			_eventDispatcher->removeEventListener(touch_listener);//TB消除后移除lisenner，防止多个lisenner存在造成bug
 			this->removeChild(touch_layer);
@@ -627,7 +631,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 		}
 		setHasUpgrade(0);
 		};
-	if (!u)
+	if (!hasUpgrade)
 		_eventDispatcher->addEventListenerWithSceneGraphPriority(touch_listener, this);
 
 }
@@ -643,7 +647,7 @@ void GameScene::UpgradeTower(EventMouse* event) {
 	Vec2 mapPos = LocationToTMXPos(screenPos);
 	// 转化成TMX地图坐标
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
-	// 地图上可以建造时
+	//通过tag获取升级的防御塔，并进行升级操作
 	Turret* currentTower;
 	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
 	int currentGrade, currentBase;
@@ -665,12 +669,12 @@ void GameScene::SaleTower(EventMouse* event) {
 	Vec2 mapPos = LocationToTMXPos(screenPos);
 	// 转化成TMX地图坐标
 	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
-	// 地图上可以建造时
 
+	//通过tag获取出售的防御塔并进行出售
 	Turret* currentTower;
 	currentTower = (Turret*)this->getChildByTag(mapX * 1000 + mapY);
 	int currentValue;
-	currentValue = currentTower->getCost1();//************************************没找到出售金币，先拿建造的一半来顶替
+	currentValue = currentTower->getCost1();
 	_goldValue += currentValue / 2;
 	isTurretAble[mapX][mapY] = 0;
 	this->removeChildByTag(mapX * 1000 + mapY);
@@ -726,18 +730,6 @@ void GameScene::initLevel()
 	_carrot->setName("carrot"); // 设个名字
 	_tileMap->addChild(_carrot, 2);
 
-
-	/*
-	Vec2 clickPos = event->getLocation();
-	//将OpenGL坐标系转换为屏幕坐标系
-	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
-	// 注意两个坐标位置
-	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
-	Vec2 mapPos = LocationToTMXPos(screenPos);
-	// 转化成TMX地图坐标
-	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
-	// 地图上可以建造时
-	*/
 
 }
 
@@ -879,9 +871,8 @@ void GameScene::onPauseButton(Ref* pSender) {
 		// 恢复游戏进行
 		this->scheduleUpdate();
 		Director::getInstance()->resume();
-
+		//移除暂停标识
 		this->removeChildByName("pauseTop");
-
 		setIsPaused(0);
 	}
 	// 点击时是正常
@@ -912,12 +903,12 @@ void GameScene::onMenuButton() {
 	this->pause();//停止点击事件
 	Director::getInstance()->pause();// 停止动作事件
 
-
+	//创建灰色遮罩层
 	auto menuLayer = LayerColor::create(Color4B(0, 0, 0, 150));
 	menuLayer->setPosition(Vec2::ZERO);
 	this->addChild(menuLayer, 10);
 
-
+	//添加暂停菜单背景
 	auto menuBackground = Sprite::create("CarrotGuardRes/UI/gameMenu.png");
 	menuBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
 	menuBackground->setScale(1.5f);
@@ -926,7 +917,7 @@ void GameScene::onMenuButton() {
 	auto menu = Menu::create();
 	menu->setPosition(Vec2::ZERO);
 	menuLayer->addChild(menu, 1);
-
+	//添加暂停菜单上相关功能按钮
 	auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
 	continueButton->setPosition(Vec2(_screenWidth * 0.495, _screenHeight * 0.649));
 	continueButton->setScale(1.5);
@@ -1033,12 +1024,12 @@ void GameScene::gameOver(int isWin) {
 		}
 		content[currentLevel] = '1';
 		fileUtils->writeStringToFile(content, filePath);
-		//
+		//添加游戏获胜界面
 		auto gameWinBackground = Sprite::create("CarrotGuardRes/UI/WinGame.png");
 		gameWinBackground->setPosition(Vec2(_screenWidth / 2, _screenHeight / 2));
 		gameWinBackground->setScale(1.5f);
 		menuLayer->addChild(gameWinBackground, 0);
-
+		//添加获胜的金萝卜标识
 		auto goldenCarrot = Sprite::create("CarrotGuardRes/UI/goldenCarrot.png");
 		goldenCarrot->setPosition(Vec2(_screenWidth * 0.493, _screenHeight * 0.7));
 		menuLayer->addChild(goldenCarrot, 0);
@@ -1055,17 +1046,19 @@ void GameScene::gameOver(int isWin) {
 		this->addChild(_curNumberLabel, 10);
 		this->addChild(loseWordLeft, 10);
 		this->addChild(loseWordRight, 10);
-
+		//继续游戏按钮
 		auto continueButton = MenuItemImage::create("CarrotGuardRes/UI/continueNormal.png", "CarrotGuardRes/UI/continueSelected.png");
 		continueButton->setPosition(Vec2(_screenWidth * 0.613, _screenHeight * 0.375));
 		continueButton->setScale(1.38);
 
 		continueButton->setCallback([this, menuLayer](Ref* psender) {
 			MusicManager::getInstance()->buttonSound();
+			//若当前未到开放的最后一关，则进行下一关
 			if (currentLevel < 2) {
 				auto gameScene = GameScene::createSceneWithLevel(currentLevel + 1, 0);
 				Director::getInstance()->replaceScene(gameScene);
 			}
+			//若当前已经是开放的最后一关，则返回选择关卡界面
 			else {
 				auto skylineScene = SkyLineSelection::createScene();
 				Director::getInstance()->replaceScene(skylineScene);
@@ -1092,7 +1085,7 @@ void GameScene::gameOver(int isWin) {
 		this->addChild(_curNumberLabel, 10);
 		this->addChild(loseWordLeft, 10);
 		this->addChild(loseWordRight, 10);
-
+		//重新游戏按钮
 		auto againButton = MenuItemImage::create("CarrotGuardRes/UI/AgainNormal.png", "CarrotGuardRes/UI/AgainSelected.png");
 		againButton->setPosition(Vec2(_screenWidth * 0.61, _screenHeight * 0.37));
 		againButton->setScale(0.9);
@@ -1111,7 +1104,7 @@ void GameScene::gameOver(int isWin) {
 	}
 
 
-
+	// 选择游戏关卡按钮
 	auto chooseButton = MenuItemImage::create("CarrotGuardRes/UI/chooseLevelNormal.png", "CarrotGuardRes/UI/chooseLevelSelected.png");
 	chooseButton->setPosition(Vec2(_screenWidth * 0.38, _screenHeight * 0.37));
 	chooseButton->setScale(1.4);
