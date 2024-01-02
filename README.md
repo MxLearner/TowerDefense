@@ -167,9 +167,12 @@
 4. 改了点cocos2dx源码内容，具体见GitHub的commit
 
 ## 食用方法
-
-
-
+#### 如果想运行我们的代码
+1. 请确保安装cocos2dx-v4.0和VisualStudio2022
+2. 运行 `git@github.com:MxLearner/TowerDefense.git `
+3. 在文件目录下依次运行 `cd proj.win32`，`cmake .. -G "Visual Studio 17 2022" -A win32`，` ./CarrotGuard.sln`
+#### 如果想直接体验我们的游戏
+请直接下载最新的release版
 
 
 
