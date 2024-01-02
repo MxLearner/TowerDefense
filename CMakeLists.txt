@@ -56,13 +56,51 @@ endif()
 
 # add cross-platforms source files and header files 
 list(APPEND GAME_SOURCE
-     Classes/AppDelegate.cpp
-     Classes/HelloWorldScene.cpp
+    Classes/AppDelegate.cpp
+    Classes/HelloWorldScene.cpp
+    Classes/AdvantureScene.cpp
+    Classes/clientGameScene.cpp
+    Classes/GameScene.cpp
+    Classes/MenuScene.cpp
+    Classes/Monster.cpp
+    Classes/Music.cpp
+    Classes/SettingScene.cpp
+    Classes/SkyLineSelection.cpp
+    Classes/Data/LevelData.cpp
+    Classes/Data/MonsterData.cpp
+    Classes/Data/PointDelegate.cpp
+    Classes/Data/TurretData.cpp
+    Classes/Network/client.cpp
+    Classes/Network/server.cpp
+    Classes/Turret/Bullet.cpp
+    Classes/Turret/Turret_TB.cpp
+    Classes/Turret/Turret_TFan.cpp
+    Classes/Turret/Turret_TSun.cpp
+    Classes/Turret/Turret.cpp
 
      )
 list(APPEND GAME_HEADER
-     Classes/AppDelegate.h
-     Classes/HelloWorldScene.h
+    Classes/AppDelegate.h
+    Classes/HelloWorldScene.h
+    Classes/AdvantureScene.h
+    Classes/clientGameScene.h
+    Classes/GameScene.h
+    Classes/MenuScene.h
+    Classes/Monster.h
+    Classes/Music.h
+    Classes/SettingScene.h
+    Classes/SkyLineSelection.h
+    Classes/Data/LevelData.h
+    Classes/Data/MonsterData.h
+    Classes/Data/PointDelegate.h
+    Classes/Data/TurretData.h
+    Classes/Network/client.h
+    Classes/Network/server.h
+    Classes/Turret/Bullet.h
+    Classes/Turret/Turret_TB.h
+    Classes/Turret/Turret_TFan.h
+    Classes/Turret/Turret_TSun.h
+    Classes/Turret/Turret.h
 
      )
 

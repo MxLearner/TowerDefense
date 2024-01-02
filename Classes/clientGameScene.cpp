@@ -1,27 +1,26 @@
 #include "clientGameScene.h"
 #include"ui/CocosGUI.h"
-#include"Turret_TB.h"
-#include"Turret_TFan.h"
-#include"Turret_TSun.h"
-#include"Bullet.h"
+#include"Turret/Turret_TB.h"
+#include"Turret/Turret_TFan.h"
+#include"Turret/Turret_TSun.h"
 using namespace ui;
 USING_NS_CC;
 
 static int currentLevel = -1;  // 当前关卡
-static void problemLoading(const char* filename)
-{
-	printf("Error while loading: %s\n", filename);
-}
+static int IS_GET_CURRENT_LEVEL = 0; // 是否获取到当前关卡
 Scene* ClientGameScene::createScene()
 {
 	auto scene = Scene::create();
 	auto layer = ClientGameScene::create();
-	if (!layer) {
-		return nullptr;
-	}
 	layer->setName("layer"); // 设个名字
 	scene->addChild(layer);
-	return scene;
+	if (IS_GET_CURRENT_LEVEL) {
+		return  scene;
+	}
+	else {
+		return nullptr;
+
+	}
 }
 
 bool ClientGameScene::init()
@@ -38,7 +37,7 @@ bool ClientGameScene::init()
 	serverThread.detach();
 	// 获取关卡
 	if (!getCurrentLevel()) {
-		return false;
+		return true;
 	}
 	// 读取关卡数据 
 	LoadLevelData();
@@ -46,35 +45,8 @@ bool ClientGameScene::init()
 	TopLabel();
 	// 游戏主循环
 	scheduleUpdate();
-	//
-	//添加关闭按钮
-	auto backgroundImage = Sprite::create("CarrotGuardRes/UI/BasicBackground.png");
-	Vec2 origin = Director::getInstance()->getVisibleOrigin();
-	//获得背景图片和窗口的缩放比例
-	float backgroundScale = screenSize.width / backgroundImage->getContentSize().width;
-	auto menu = Menu::create();
-	menu->setPosition(Vec2::ZERO);
-	this->addChild(menu, 1);
-	auto closeButton = MenuItemImage::create("CarrotGuardRes/UI/CloseNormal.png", "CarrotGuardRes/UI/CloseSelected.png", CC_CALLBACK_1(ClientGameScene::menuCloseCallback, this));
-	if (closeButton == nullptr ||
-		closeButton->getContentSize().width <= 0 ||
-		closeButton->getContentSize().height <= 0)
-	{
-		problemLoading("'CloseNormal.png' and 'CloseSelected.png'");
-	}
-	else
-	{
-		float x = origin.x + screenSize.width - closeButton->getContentSize().width / 2;
-		float y = origin.y + closeButton->getContentSize().height / 2;
-		closeButton->setPosition(Vec2(x, y));
-		closeButton->setScale(backgroundScale);
-		menu->addChild(closeButton);
 
-	}
 	return true;
-}
-void ClientGameScene::menuCloseCallback(Ref* pSender) {
-	Director::getInstance()->end();
 }
 
 void ClientGameScene::LoadLevelData()
@@ -199,8 +171,7 @@ void ClientGameScene::initLevel()
 		CCLOG("JSON parse error");
 		return;
 	}
-	// 放在这解决了由于update函数调用频率过高可能丢包导致的闪屏问题
-	clearAll();
+
 	try {
 		_currNum = document["currNum"].GetInt();
 		_goldValue = document["goldValue"].GetInt();
@@ -354,6 +325,7 @@ void ClientGameScene::initLevel()
 void ClientGameScene::update(float dt)
 {
 	udpclient.Send("update");
+	clearAll();
 	initLevel();
 	updateGameState();
 }
@@ -373,6 +345,7 @@ bool ClientGameScene::getCurrentLevel()
 		i++;
 		if (!contentStr.empty() && !document.Parse<0>(contentStr.c_str()).HasParseError()) {
 			currentLevel = document["currentLevel"].GetInt();
+			IS_GET_CURRENT_LEVEL = 1;
 			return true;
 		}
 		// 继续发送请求
@@ -404,7 +377,7 @@ void ClientGameScene::TopLabel()
 	_goldLabel = Label::createWithSystemFont(StringUtils::format("%d", _goldValue), "Arial-BoldMT", 32);
 	_goldLabel->setColor(Color3B::WHITE);
 	_goldLabel->setPosition(_screenWidth * 0.125f, _screenHeight * 0.95);
-	//_goldLabel->enableOutline(Color4B::WHITE, 2);   
+	//_goldLabel->enableOutline(Color4B::WHITE, 2);
 	this->addChild(_goldLabel, 2);
 	//添加游戏界面上部的ui
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();

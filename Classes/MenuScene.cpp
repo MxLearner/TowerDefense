@@ -3,12 +3,12 @@
 #include "SettingScene.h"
 #include"clientGameScene.h"
 #include "ui/CocosGUI.h"
+#include "Music.h"
 using namespace ui;
 static void problemLoading(const char* filename)
 {
 	printf("Error while loading: %s\n", filename);
 }
-
 static int ALLGAMESAVE = 0;
 Scene* MenuScene::createScene()
 {
@@ -146,7 +146,7 @@ bool MenuScene::init() {
 	}
 
 
-	//添加冒险模式按钮
+		//添加冒险模式按钮
 	auto advantureButton = MenuItemImage::create("CarrotGuardRes/UI/AdvantureButtonNormal.png", "CarrotGuardRes/UI/AdvantureButtonSelected.png", CC_CALLBACK_1(MenuScene::ToAdvantureScene, this));
 	if (advantureButton == nullptr ||
 		advantureButton->getContentSize().width <= 0 ||
@@ -192,7 +192,7 @@ bool MenuScene::init() {
 		float x = visibleSize.width * 0.8;
 		float y = visibleSize.height * 0.15;
 		witnessButton->setPosition(Vec2(x, y));
-		witnessButton->setScale(1.5 * backgroundScale);
+		witnessButton->setScale(1.5*backgroundScale);
 		menu->addChild(witnessButton);
 	}
 
@@ -217,21 +217,25 @@ bool MenuScene::init() {
 }
 
 void MenuScene::menuCloseCallback(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	Director::getInstance()->end();
 }
 
 
 void MenuScene::ToAdvantureScene(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	auto advantureScene = AdvantureScene::createScene();
 	Director::getInstance()->replaceScene(advantureScene);
 }
 
 void MenuScene::ToSettingScene(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	auto settingScene = SettingScene::createScene();
 	Director::getInstance()->replaceScene(settingScene);
 }
 
 void MenuScene::ToClientGameScene(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	auto witnessScene = ClientGameScene::createScene();
 	if (witnessScene != nullptr) {
 		Director::getInstance()->pushScene(witnessScene);

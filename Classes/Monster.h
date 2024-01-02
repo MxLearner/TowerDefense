@@ -8,7 +8,7 @@
 
 #include"ui/CocosGUI.h"
 #include"cocos2d.h"
-#include"PointDelegate.h"
+#include"Data/PointDelegate.h"
 USING_NS_CC;
 using namespace ui;
 

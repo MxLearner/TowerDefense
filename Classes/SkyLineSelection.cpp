@@ -3,6 +3,7 @@
 #include "SkyLineSelection.h"
 #include "GameScene.h"
 #include "ui/CocosGUI.h"
+#include "Music.h"
 using namespace ui;
 
 
@@ -22,6 +23,14 @@ Scene* SkyLineSelection::createScene()
 bool SkyLineSelection::init() {
 	if (!Layer::init())
 		return false;
+
+	int isMusicPause = MusicManager::getInstance()->getIsBGMPause();
+	if (isMusicPause) {
+		MusicManager::getInstance()->playBackgroundMusic();
+		MusicManager::getInstance()->setIsBGMPlay(1);
+		MusicManager::getInstance()->setIsBGMPause(0);
+	}
+
 
 	auto screenSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -113,10 +122,34 @@ bool SkyLineSelection::init() {
 
 	// 添加触摸事件监听器
 	pageView->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
-		if (type == Widget::TouchEventType::ENDED) {
-			PageView* pageView = dynamic_cast<PageView*>(pSender);
-			int currentIndex = pageView->getCurrentPageIndex();
+		if (type == Widget::TouchEventType::BEGAN)
+		{
+			auto confirm = this->getChildByName("confirmButton");
+			auto cancel = this->getChildByName("cancelButton");
+			auto locked = this->getChildByName("lockedButton");
+			if (confirm && cancel) {
+				this->removeChildByName("confirmButton");
+				this->removeChildByName("cancelButton");
+			}
+			if (locked)
+				this->removeChildByName("lockedButton");
 
+		}
+		if (type == Widget::TouchEventType::ENDED) {
+			MusicManager::getInstance()->buttonSound();
+			PageView* pageView = dynamic_cast<PageView*>(pSender);
+			
+			auto confirm = this->getChildByName("confirmButton");
+			auto cancel = this->getChildByName("cancelButton");
+			auto locked = this->getChildByName("lockedButton");
+			if (confirm && cancel) {
+				this->removeChildByName("confirmButton");
+				this->removeChildByName("cancelButton");
+			}
+			if (locked)
+				this->removeChildByName("lockedButton");
+				
+			int currentIndex = pageView->getCurrentPageIndex();
 			if (currentIndex < 2 && content[currentIndex] == '1') {
 				// 创建确认按钮
 				auto confirmButton = Button::create("CarrotGuardRes/UI/fileNormal.png", "CarrotGuardRes/UI/fileSelected.png");  // 替换成你的按钮图片
@@ -124,6 +157,7 @@ bool SkyLineSelection::init() {
 				confirmButton->setPosition(Vec2(screenSize.width * 0.6, screenSize.height * 0.13));
 				confirmButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 					if (type == Widget::TouchEventType::ENDED) {
+						MusicManager::getInstance()->buttonSound();
 						// 载入存档，tmp=1
 						int tmp = 1;
 						auto gameScene = GameScene::createSceneWithLevel(currentIndex + 1, tmp);
@@ -138,6 +172,7 @@ bool SkyLineSelection::init() {
 				cancelButton->setPosition(Vec2(screenSize.width * 0.4, screenSize.height * 0.13));  // 调整位置
 				cancelButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 					if (type == Widget::TouchEventType::ENDED) {
+						MusicManager::getInstance()->buttonSound();
 						// 不载入存档，tmp=0
 						int tmp = 0;
 						auto gameScene = GameScene::createSceneWithLevel(currentIndex + 1, tmp);
@@ -152,7 +187,6 @@ bool SkyLineSelection::init() {
 				lockedButton->setPosition(Vec2(screenSize.width * 0.5, screenSize.height * 0.13));  // 调整位置
 				this->addChild(lockedButton);
 			}
-
 		}
 		});
 
@@ -161,6 +195,7 @@ bool SkyLineSelection::init() {
 	leftButton->setPosition(Vec2(screenSize.width * 0.1, screenSize.height / 2));
 	leftButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 		if (type == Widget::TouchEventType::ENDED) {
+			MusicManager::getInstance()->buttonSound();
 			int currentIndex = pageView->getCurrentPageIndex();
 			if (currentIndex > 0) {
 				pageView->scrollToPage(currentIndex - 1);
@@ -184,6 +219,7 @@ bool SkyLineSelection::init() {
 	rightButton->setPosition(Vec2(screenSize.width * 0.9, screenSize.height / 2));
 	rightButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 		if (type == Widget::TouchEventType::ENDED) {
+			MusicManager::getInstance()->buttonSound();
 			int currentIndex = pageView->getCurrentPageIndex();
 			if (currentIndex < 0)
 				currentIndex = 0;  //  未知原因导致开始的时候index是-1，暂时像这样处理。
@@ -210,6 +246,7 @@ bool SkyLineSelection::init() {
 
 
 void SkyLineSelection::ToAdvantureScene(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	auto advantureScene = AdvantureScene::createScene();
 	Director::getInstance()->replaceScene(advantureScene);
 }

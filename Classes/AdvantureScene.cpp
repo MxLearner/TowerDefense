@@ -2,6 +2,7 @@
 #include "AdvantureScene.h"
 #include "SkyLineSelection.h"
 #include "ui/CocosGUI.h"
+#include "Music.h"
 using namespace ui;
 
 
@@ -106,6 +107,7 @@ bool AdvantureScene::init() {
 	// 添加触摸事件监听器
 	pageView->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 		if (type == Widget::TouchEventType::ENDED) {
+			MusicManager::getInstance()->buttonSound();
 			PageView* pageView = dynamic_cast<PageView*>(pSender);
 			int currentIndex = pageView->getCurrentPageIndex();
 			Scene* skylineScene;
@@ -129,6 +131,7 @@ bool AdvantureScene::init() {
 	leftButton->setPosition(Vec2(screenSize.width * 0.1, screenSize.height / 2));
 	leftButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 		if (type == Widget::TouchEventType::ENDED) {
+			MusicManager::getInstance()->buttonSound();
 			int currentIndex = pageView->getCurrentPageIndex();
 			CCLOG("currentIndex:  %d", currentIndex);
 			if (currentIndex > 0) {
@@ -142,6 +145,7 @@ bool AdvantureScene::init() {
 	rightButton->setPosition(Vec2(screenSize.width * 0.9, screenSize.height / 2));
 	rightButton->addTouchEventListener([=](Ref* pSender, Widget::TouchEventType type) {
 		if (type == Widget::TouchEventType::ENDED) {
+			MusicManager::getInstance()->buttonSound();
 			int currentIndex = pageView->getCurrentPageIndex();
 			if (currentIndex < 0)
 				currentIndex = 0;  //  未知原因导致开始的时候index是-1，暂时像这样处理。
@@ -158,11 +162,13 @@ bool AdvantureScene::init() {
 }
 
 void AdvantureScene::ToMenuScene(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	auto menuScene = MenuScene::createScene();
 	Director::getInstance()->replaceScene(menuScene);
 }
 
 void AdvantureScene::ToSkyLineSelection(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	auto skylineScene = SkyLineSelection::createScene();
 	Director::getInstance()->replaceScene(skylineScene);
 }

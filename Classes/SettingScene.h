@@ -19,7 +19,8 @@ public:
 
     // a selector callback
     void ToMenuScene(Ref* pSender);
-    void PlayBackgroundMusic(Ref* pSender);
+    void PlayBGM(Ref* pSender);
+    void PlaySoundEffect(Ref* pSender);
 
     // implement the "static create()" method manually
     CREATE_FUNC(SettingScene);

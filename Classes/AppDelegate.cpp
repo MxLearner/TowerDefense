@@ -26,6 +26,7 @@
 #include "HelloWorldScene.h"
 #include"GameScene.h"
 #include "MenuScene.h"
+#include"Music.h"
 
  // #define USE_AUDIO_ENGINE 1
 
@@ -109,13 +110,16 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
 	register_all_packages();
 
+	MusicManager::getInstance()->preloadSoundEffect("CarrotGuardRes/Sounds/bgm.mp3");
+	MusicManager::getInstance()->preloadSoundEffect("CarrotGuardRes/Sounds/button.mp3");
+
 	// create a scene. it's an autorelease object
 	//auto scene = HelloWorld::createScene();
 	//auto scene = HelloWorld::create();
 	//auto scene = GameScene::createSceneWithLevel(1);
 	auto scene = MenuScene::createScene();
-	// run
 	director->runWithScene(scene);
+	MusicManager::getInstance()->playBackgroundMusic();
 
 	return true;
 }

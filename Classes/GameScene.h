@@ -5,16 +5,16 @@
 
 #include"cocos2d.h"
 #include"Monster.h"
-#include"Turret.h"
-#include"Bullet.h"
-#include"PointDelegate.h"
-#include"TurretData.h"
-#include"MonsterData.h"
+#include"Turret/Turret.h"
+#include"Turret/Bullet.h"
+#include"Data/PointDelegate.h"
+#include"Data/TurretData.h"
+#include"Data/MonsterData.h"
 #include"json/document.h"
 #include "json/writer.h"
 #include "json/stringbuffer.h"
-#include"server.h"
-#include"client.h"
+#include"Network/server.h"
+#include"Network/client.h"
 
 
 USING_NS_CC;
@@ -28,7 +28,7 @@ protected:
 
 	// 初始化参数
 	int _currNum = 0;            // 当前怪物波数
-	int _goldValue = 2000;          // 玩家当前金币数量
+	int _goldValue = 200;          // 玩家当前金币数量
 	Sprite* _carrot;          // 萝卜
 	int carrotHealth = 5;     // 直接在这加吧，萝卜的生命值
 
@@ -48,9 +48,10 @@ protected:
 	Vector<Monster*> _currentMonsters;       // 场上现存的怪物
 	Vector<Turret*> _currentTurrets;         // 场上现存的炮塔
 	int _monsterDeath = 0;                   // 被摧毁的怪物，包括被打死的和到终点的
-	int _isDoubleSpeed = 0;                  // 标记当前是否开启二倍速
 	int _isPaused = 0;                       // 标记当前游戏是否暂停
 	int _isFinalWave = 0;                   // 标记当前游戏是否是最后一波怪物
+	int _carrotTag = 0;                     // 标记萝卜位置的tag
+	int _carrotCost = 150;                  //标记点击萝卜回血的花费
 
 
 	// 顶部标签
@@ -91,8 +92,6 @@ public:
 	void onMenuButton();
 	// 游戏中的暂停按钮选项
 	void onPauseButton(Ref* pSender);
-	// 游戏中的二倍速选项
-	void onSpeedButton(Ref* pSender);
 	// 游戏结束
 	void gameOver(int isWin);
 
@@ -130,7 +129,7 @@ public:
 	}
 
 	// 有怪物到达终点，对萝卜造成伤害，并判断游戏是否失败
-	void HurtCarrot();
+	void HurtCarrot(int isHurt);
 
 	// 从数组中删除场上怪物
 	void removeMonster(Monster* monster);
@@ -202,14 +201,6 @@ public:
 	EventListenerMouse* getTouchListener() {
 		return touchListener;
 	}
-	// 二倍速
-	void setIsDoubleSpeed(int option) {
-		_isDoubleSpeed = option;
-	}
-
-	int getIsDoubleSpeed() {
-		return _isDoubleSpeed;
-	}
 	// 暂停
 	void setIsPaused(int option) {
 		_isPaused = option;
@@ -223,6 +214,13 @@ public:
 	}
 	int getIsFinalWave() {
 		return _isFinalWave;
+	}
+	// 获取萝卜的tag
+	void setCarrotTag(int option) {
+		_carrotTag = option;
+	}
+	int getCarrotTag() {
+		return _carrotTag;
 	}
 	// 存档
 	void SaveGame();

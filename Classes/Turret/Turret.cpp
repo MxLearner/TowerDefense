@@ -1,9 +1,11 @@
 #include "Turret.h"
 #include"GameScene.h"
 #include"Bullet.h"
+#include "Music.h"
 #define DEBUG
 bool Turret::init()
-{   // 每一帧追踪怪物
+{
+	// 每一帧追踪怪物
 	_monster = nullptr;
 	scheduleUpdate();
 	// 创建并发射子弹
@@ -80,6 +82,10 @@ void Turret::ShootBullet()
 	auto moveTo = MoveTo::create(0.2f, targetPos);
 	auto damageCallback = CallFunc::create([=]() {
 		if (monster != nullptr && monster->getLifeValue() > 0) {
+			if (getName() == "TB")
+				MusicManager::getInstance()->bottleSound();
+			if (getName() == "TFan")
+				MusicManager::getInstance()->fanSound();
 			int curLifeValue = monster->getLifeValue() - bullet->getDamage();
 			monster->setLifeValue(curLifeValue);
 		}});

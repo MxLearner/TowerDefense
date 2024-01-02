@@ -1,10 +1,11 @@
 #include"GameScene.h"
 #include"ui/CocosGUI.h"
-#include"Turret_TB.h"
-#include"Turret_TFan.h"
-#include"Turret_TSun.h"
+#include"Turret/Turret_TB.h"
+#include"Turret/Turret_TFan.h"
+#include"Turret/Turret_TSun.h"
 #include"SkyLineSelection.h"
 #include <regex>
+#include "Music.h"
 using namespace ui;
 USING_NS_CC;
 
@@ -41,6 +42,14 @@ Scene* GameScene::createSceneWithLevel(int selectLevel, int isSave)
 // 关卡场景初始化
 bool GameScene::init()
 {
+
+	int isMusicOn = MusicManager::getInstance()->getIsBGMPlay();
+	if (isMusicOn) {
+		MusicManager::getInstance()->pauseBackgroundMusic();
+		MusicManager::getInstance()->setIsBGMPlay(0);
+		MusicManager::getInstance()->setIsBGMPause(1);
+	}
+
 	if (!Layer::init()) {
 		return false;
 	}
@@ -92,8 +101,6 @@ bool GameScene::init()
 	setTouchLayer(NULL);
 	createTouchListener();
 	setTouchListener(NULL);
-	//初始化二倍速标记
-	setIsDoubleSpeed(0);
 	//初始化最后一波的标记
 	setIsFinalWave(0);
 	return true;
@@ -196,6 +203,8 @@ void GameScene::LoadLevelData()
 		// 将地图坐标转化成屏幕坐标
 		Vec2 locationPoint = TMXPosToLocation(tilePoint);
 
+		setCarrotTag(1000 * x + y);
+
 		// Point不能继承Ref，Vector不能存储
 		auto pointDelegate = PointDelegate::create(locationPoint.x, locationPoint.y);
 
@@ -224,6 +233,17 @@ void GameScene::onMouseDown(EventMouse* event)
 	//获取当前升级界面是否激活
 	int u = getHasUpgrade();
 
+	// 判断点击萝卜事件
+	int currentTag = 1000 * mapX + mapY;
+	CCLOG("currenttTag: %d", 1000 * mapX + mapY);
+	CCLOG("carrotTag: %d", getCarrotTag());
+	if (currentTag == getCarrotTag() && _goldValue >= _carrotCost && carrotHealth < 5) {
+		carrotHealth++;
+		_goldValue -= _carrotCost;
+		HurtCarrot(0);
+	}
+
+
 	// 地图上可以建造时
 	if (isTurretAble[mapX][mapY] == 0) {
 		if (!u)//这样防止在升级塔的时候误触旁边的空地
@@ -239,7 +259,6 @@ void GameScene::onMouseDown(EventMouse* event)
 
 void GameScene::TouchLand(EventMouse* event) {
 	//***************建两个塔，先点左边再点右边，再点右边的空地，不要见他，再点右边的空地，会出现touchlayer空(最近没有发现
-
 
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
@@ -412,6 +431,7 @@ void GameScene::TouchLand(EventMouse* event) {
 }
 
 void GameScene::BuildTower(EventMouse* event, int numTower) {
+	MusicManager::getInstance()->buildSound();
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -473,7 +493,6 @@ void GameScene::BuildTower(EventMouse* event, int numTower) {
 }
 
 void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成三个塔，第三个塔升级的时候会出bug，哪份distance是空的（应该是怪刚刚死的时候点升级
-
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -614,6 +633,7 @@ void GameScene::TouchTower(EventMouse* event) {//*******************从右往左生成
 }
 
 void GameScene::UpgradeTower(EventMouse* event) {
+	MusicManager::getInstance()->upgradeSound();
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -635,6 +655,7 @@ void GameScene::UpgradeTower(EventMouse* event) {
 }
 
 void GameScene::SaleTower(EventMouse* event) {
+	MusicManager::getInstance()->sellSound();
 	// 获取鼠标点击的坐标
 	Vec2 clickPos = event->getLocation();
 	//将OpenGL坐标系转换为屏幕坐标系
@@ -689,6 +710,8 @@ void GameScene::initLevel()
 		}
 	}
 
+
+
 	// 获得Carrot 对象
 	auto carrotObject = _tileMap->getObjectGroup("carrotObject");
 
@@ -702,6 +725,19 @@ void GameScene::initLevel()
 	_carrot->setPosition(carrotX, carrotY);
 	_carrot->setName("carrot"); // 设个名字
 	_tileMap->addChild(_carrot, 2);
+
+
+	/*
+	Vec2 clickPos = event->getLocation();
+	//将OpenGL坐标系转换为屏幕坐标系
+	Vec2 screenPos = Director::getInstance()->convertToUI(clickPos);
+	// 注意两个坐标位置
+	// 鼠标点击的是OpenGL坐标系，左上角0，0，屏幕坐标左下角0,0
+	Vec2 mapPos = LocationToTMXPos(screenPos);
+	// 转化成TMX地图坐标
+	int mapX = (int)(mapPos.x), mapY = (int)(mapPos.y);
+	// 地图上可以建造时
+	*/
 
 }
 
@@ -736,29 +772,7 @@ void GameScene::TopLabel()
 	topImage->setScale(_screenWidth / topImage->getContentSize().width);
 	this->addChild(topImage, 1);
 
-	// 二倍速按钮
-	auto speedButton = Button::create("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
-	speedButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.23, _screenHeight + origin.y - _screenHeight * 0.055f));
-	this->addChild(speedButton, 2);
-	speedButton->addClickEventListener(CC_CALLBACK_1(GameScene::onSpeedButton, this));
-
-
-	/*
-	speedButton->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
-		switch (type) {
-		case Button::TouchEventType::BEGAN:
-			break;
-		case Button::TouchEventType::MOVED:
-			break;
-		case Button::TouchEventType::CANCELED:
-			break;
-		case Button::TouchEventType::ENDED:
-			onSpeedButton();
-			break;
-		}
-		});*/
-
-		// 暂停按钮
+	// 暂停按钮
 	auto pauseButton = Button::create("CarrotGuardRes/UI/pauseButton.png", "CarrotGuardRes/UI/continueButton.png");
 	pauseButton->setPosition(Vec2(_screenWidth / 2 + origin.x + _screenWidth * 0.33, _screenHeight + origin.y - _screenHeight * 0.055f));
 	this->addChild(pauseButton, 2);
@@ -821,17 +835,21 @@ void GameScene::CountDown()
 	auto countdown = Sequence::create(CallFunc::create([=] {
 		countBackground->setVisible(true);
 		count3->setVisible(true);
+		MusicManager::getInstance()->countSound();
 		}), DelayTime::create(1), CallFunc::create([=] {
 			this->removeChild(count3);
 			}), CallFunc::create([=] {
 				count2->setVisible(true);
+				MusicManager::getInstance()->countSound();
 				}), DelayTime::create(1), CallFunc::create([=] {
 					this->removeChild(count2);
 					}), CallFunc::create([=] {
 						count1->setVisible(true);
+						MusicManager::getInstance()->countSound();
 						}), DelayTime::create(1), CallFunc::create([=] {
 							this->removeChild(count1);
 							count0->setVisible(true);
+							MusicManager::getInstance()->downSound();
 							}), DelayTime::create(1), CallFunc::create([=] {
 								this->removeChild(count0);
 								this->removeChild(countBackground);
@@ -850,47 +868,8 @@ void GameScene::CountDown()
 	this->runAction(countdown);
 }
 
-void GameScene::onSpeedButton(Ref* pSender) {
-
-	// 获取加速按钮
-	auto button = static_cast<ui::Button*>(pSender);
-	// 在这里改变按钮的样式
-	int isDoubleSpeed = getIsDoubleSpeed();
-	// 点击时是二倍速
-	if (isDoubleSpeed) {
-		button->loadTextures("CarrotGuardRes/UI/normalSpeed.png", "CarrotGuardRes/UI/normalSpeed.png");
-		setIsDoubleSpeed(0);
-	}
-	// 点击时是正常倍速
-	else {
-		button->loadTextures("CarrotGuardRes/UI/doubleSpeed.png", "CarrotGuardRes/UI/doubleSpeed.png");
-		setIsDoubleSpeed(1);
-	}
-
-	// 这里再次获取一下方便下面的逻辑理解
-	isDoubleSpeed = getIsDoubleSpeed();
-	//下面进行二倍速处理
-	if (isDoubleSpeed) {
-		for (auto monster : _currentMonsters) {//*******暂时还没有实现
-			monster->setSpeed(10);
-		}
-		for (auto turret : _currentTurrets) {
-		}
-	}
-	// 恢复正常倍速理解
-	else {
-		for (auto monster : _currentMonsters) {
-			monster->setSpeed(1);
-		}
-		for (auto turret : _currentTurrets) {
-		}
-	}
-
-
-
-}
-
 void GameScene::onPauseButton(Ref* pSender) {
+	MusicManager::getInstance()->buttonSound();
 	// 获取暂停按钮
 	auto button = static_cast<ui::Button*>(pSender);
 	int isPaused = getIsPaused();
@@ -925,6 +904,7 @@ void GameScene::onPauseButton(Ref* pSender) {
 }
 
 void GameScene::onMenuButton() {
+	MusicManager::getInstance()->buttonSound();
 
 	//停止游戏进行
 	this->unscheduleUpdate();
@@ -959,6 +939,7 @@ void GameScene::onMenuButton() {
 
 	// 继续游戏选项
 	continueButton->setCallback([this, menuLayer](Ref* psender) {
+		MusicManager::getInstance()->buttonSound();
 		this->removeChild(menuLayer);
 		// 判断在点击菜单按钮之前是否点击过暂停按钮，防止出现bug
 		if (getIsPaused() == 0) {
@@ -972,7 +953,7 @@ void GameScene::onMenuButton() {
 
 	//重新开始游戏选项
 	restartButton->setCallback([this, menuLayer](Ref* psender) {
-
+		MusicManager::getInstance()->buttonSound();
 		auto gameScene = GameScene::createSceneWithLevel(1, 0);
 		Director::getInstance()->replaceScene(gameScene);
 		this->removeChild(menuLayer);
@@ -983,6 +964,7 @@ void GameScene::onMenuButton() {
 
 	//选择关卡选项
 	chooseButton->setCallback([this, menuLayer](Ref* psender) {
+		MusicManager::getInstance()->buttonSound();
 		auto skylineScene = SkyLineSelection::createScene();
 		Director::getInstance()->replaceScene(skylineScene);
 		auto runningScene = Director::getInstance()->getRunningScene();
@@ -1079,6 +1061,7 @@ void GameScene::gameOver(int isWin) {
 		continueButton->setScale(1.38);
 
 		continueButton->setCallback([this, menuLayer](Ref* psender) {
+			MusicManager::getInstance()->buttonSound();
 			if (currentLevel < 2) {
 				auto gameScene = GameScene::createSceneWithLevel(currentLevel + 1, 0);
 				Director::getInstance()->replaceScene(gameScene);
@@ -1116,6 +1099,7 @@ void GameScene::gameOver(int isWin) {
 
 		// 重新开始按钮的选项
 		againButton->setCallback([this, menuLayer](Ref* psender) {
+			MusicManager::getInstance()->buttonSound();
 			auto gameScene = GameScene::createSceneWithLevel(1, 0);
 			Director::getInstance()->replaceScene(gameScene);
 			this->removeChild(menuLayer);
@@ -1135,6 +1119,7 @@ void GameScene::gameOver(int isWin) {
 
 
 	chooseButton->setCallback([this, menuLayer](Ref* psender) {
+		MusicManager::getInstance()->buttonSound();
 		auto skylineScene = SkyLineSelection::createScene();
 		Director::getInstance()->replaceScene(skylineScene);
 		auto runningScene = Director::getInstance()->getRunningScene();
@@ -1255,8 +1240,10 @@ void GameScene::generateMonsterWave() {
 }
 
 // 有怪物到达终点，对萝卜造成伤害
-void GameScene::HurtCarrot() {
-	carrotHealth--;
+void GameScene::HurtCarrot(int isHurt) {
+	MusicManager::getInstance()->carrotSound();
+	if (isHurt)
+		carrotHealth--;;
 	// 判断游戏是否结束
 	if (carrotHealth <= 0) {
 		CCLOG("Game Over!");
@@ -1300,7 +1287,7 @@ void GameScene::updateMonster()
 		// 判断怪物是否被消灭,增加金币
 
 		if (monster->getLifeValue() <= 0) {
-
+			MusicManager::getInstance()->normalSound();
 			_goldValue += monster->getGold();
 			monster->removeHP();//移除血条
 			monstersToRemove.pushBack(monster);
@@ -1311,7 +1298,7 @@ void GameScene::updateMonster()
 		}
 		// 判断怪物是否到达终点，对萝卜造成伤害
 		if (monster->getisLastPoint()) {
-			HurtCarrot();
+			HurtCarrot(1);
 			monstersToRemove.pushBack(monster);
 		}
 	}

@@ -14,7 +14,6 @@ public:
 	// 根据关卡编号创建游戏关卡场景
 	static Scene* createScene();
 	virtual bool init()override; //init the scene
-	void menuCloseCallback(Ref* pSender);
 	virtual void LoadLevelData()override;
 	virtual void initLevel()override;//init the level
 	virtual void update(float dt)override;//update the scene

@@ -14,28 +14,40 @@ class MusicManager {
 public:
     static MusicManager* getInstance();
 
+    void preloadSoundEffect(const std::string& soundEffectFile);
+    int getIsBGMPlay();
+    void setIsBGMPlay(int option);
+    int getIsSoundPlay();
+    void setIsSoundPlay(int option);
+    int getIsBGMPause();
+    void setIsBGMPause(int option);
+
     void playBackgroundMusic();
     void pauseBackgroundMusic();
-    void resumeBackgroundMusic();
-
-    void playSoundEffect(const std::string& soundEffectFile);
-    void stopSoundEffect();
+    void buttonSound();
+    void pageSound();
+    void buildSound();
+    void sellSound();
+    void upgradeSound();
+    void sunSound();
+    void bottleSound();
+    void fanSound();
+    void carrotSound();
+    void normalSound();
+    void countSound();
+    void downSound();
 
 private:
     MusicManager();
     ~MusicManager();
-
     static MusicManager* instance;
+    int isBGMPlay=1;
+    int isBGMPause = 0;
+    int isSoundPlay = 1;
+    int bgmID = 0;
+ 
 
-    float soundEffectVolume;
-    float backgroundMusicVolume;
 };
-
-void MusicManager::playBackgroundMusic() {
-    AudioEngine::play2d("CarrotGuardRes/Music/bgm.mp3", false, 0.5f);
-}
-
-
 
 
 

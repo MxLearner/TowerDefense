@@ -1,7 +1,7 @@
 #include "Turret_TSun.h"
 #include"GameScene.h"
 #include"Bullet.h"
-
+#include "Music.h"
 
 bool Turret_TSun::init()
 {   // 每一帧追踪怪物
@@ -50,6 +50,8 @@ void Turret_TSun::ShootBullet()
 					float distance = getPosition().distance(monster->getPosition());
 					// 检测是否在射程内
 					if (distance <= _range) {
+						if (getName() == "TSun")
+							MusicManager::getInstance()->sunSound();
 						monster->setLifeValue(monster->getLifeValue() - _damage);
 					}
 				}
