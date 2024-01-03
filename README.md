@@ -6,6 +6,7 @@
 * 项目Github地址：
 [https://github.com/MxLearner/TowerDefense]()
 * 项目进度时间线：
+* <img src="MDres\7.png" width = "300" height = "200" alt="" align=center />
 ## 项目开发文档
 * 选用引擎： Cocos2d-x v4.0
 * 辅助软件：Tiled-1.1.4、TexturePackerGUI
@@ -21,6 +22,7 @@
         - 防御塔建造、升级与出售功能实现
         - 游戏暂停功能制作  
 * 类的设计及继承关系：
+* <img src="MDres\8.png" width = "390" height = "200" alt="" align=center />
 *  评分项完成度
     -    基础功能
            - [x] ⽀持⾄少3种防御塔和防御塔的删除
@@ -152,7 +154,17 @@
         }
         ``` 
 * 加分项 
-
+    1. 在Github上部署完整项目，并且由详细的使用文档
+    2. 团队分工合理，项目开源至GitHub
+    3. 界面精美，接近还原游戏原作
+    4. 添加了音效和背景音乐，且均支持手动打开关闭
+    5. 项目目录结构清晰
+    6. 运行时无崩溃情况发生
+    7. 没有内存泄露问题
+    8. 实现暂停游戏功能
+    9. 实现游戏存档功能
+    10. 实现观战游戏功能
+    11. 使用problemloading和try catch来处理异常
 
 
 
